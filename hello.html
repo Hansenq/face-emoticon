@@ -1,0 +1,79 @@
+<html>
+<head>
+<title>minimal demo</title>
+
+<!-- CSS goes here -->
+<style>
+body {
+  background-color: #FFF; /* example... */
+}
+</style>
+
+<!-- import convnetjs library -->
+<script src="convnetjs/build/convnet.js"></script>
+
+<!-- javascript goes here -->
+<script type="text/javascript">
+
+function periodic() {
+  var d = document.getElementById('egdiv');
+  d.innerHTML = 'Random number: ' + Math.random()
+}
+
+var net; // declared outside -> global variable in window scope
+function start() {
+  // this gets executed on startup
+  var layer_defs = [];
+  // input layer of size 1x1x2 (all volumes are 3D)
+  layer_defs.push({type:'input', out_sx:1, out_sy:1, out_depth:2});
+  // some fully connected layers
+  layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
+  layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
+  // a softmax classifier predicting probabilities for two classes: 0,1
+  layer_defs.push({type:'softmax', num_classes:2});
+
+  // create a net out of it
+  var net = new convnetjs.Net();
+  net.makeLayers(layer_defs);
+
+  // the network always works on Vol() elements. These are essentially
+  // simple wrappers around lists, but also contain gradients and dimensions
+  var trainer = new convnetjs.Trainer(net, {learning_rate:0.01, l2_decay:0.001});
+  var x7 = new convnetjs.Vol([-0.5, 0.5]);
+
+  var probability_volume7 = net.forward(x7);
+  console.log('probability that x7 is class 0: ' + probability_volume7.w[0]);
+  var x1 = new convnetjs.Vol([0, 1]);
+  trainer.train(x1, 0);
+  var x2 = new convnetjs.Vol([0.1, 0.2]);
+  trainer.train(x2, 0);
+  var x3 = new convnetjs.Vol([-0.5, -0.3]);
+  trainer.train(x3, 0);
+  var x4 = new convnetjs.Vol([1, 0]);
+  trainer.train(x4, 1);
+  var x5 = new convnetjs.Vol([0.2, 0.1]);
+  trainer.train(x5, 1);
+  var x6 = new convnetjs.Vol([-0.5, -0.8]);
+  trainer.train(x6, 1);
+
+  var probability_volume1 = net.forward(x1);
+  var probability_volume2 = net.forward(x2);
+  var probability_volume3 = net.forward(x3);
+  var probability_volume4 = net.forward(x4);
+  var probability_volume5 = net.forward(x5);
+  var probability_volume6 = net.forward(x6);
+
+  var probability_volume8 = net.forward(x7);
+  console.log('probability that x7 is class 0: ' + probability_volume8.w[0]);
+
+  // example of running something every 1 second
+  setInterval(periodic, 1000);
+}
+
+</script>
+</head>
+
+<body onload="start()">
+<div id="egdiv"></div>
+</body>
+</html>
