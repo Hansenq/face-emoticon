@@ -34,10 +34,10 @@
   background-color: #DFF;
 }
 .ltlrn {
-  background-color: #DFD; 
+  background-color: #DFD;
 }
 .ltdropout {
-  background-color: #AAA;  
+  background-color: #AAA;
 }
 .ltitle {
   color: #333;
@@ -125,6 +125,7 @@ trainer = new convnetjs.SGDTrainer(net, {method:'adadelta', batch_size:20, l2_de
 // BEGIN MNIST SPECIFIC STUFF
 // ------------------------
 classes_txt = ['0','1','2','3','4','5','6','7','8','9'];
+var glo_batch_size = 3000;
 
 var use_validation_data = true;
 var sample_training_instance = function() {
@@ -132,8 +133,8 @@ var sample_training_instance = function() {
   // find an unloaded batch
   var bi = Math.floor(Math.random()*loaded_train_batches.length);
   var b = loaded_train_batches[bi];
-  var k = Math.floor(Math.random()*3000); // sample within the batch
-  var n = b*3000+k;
+  var k = Math.floor(Math.random()*glo_batch_size); // sample within the batch
+  var n = b*glo_batch_size+k;
 
   // load more batches over time
   if(step_num%5000===0 && step_num>0) {
@@ -156,15 +157,15 @@ var sample_training_instance = function() {
   }
   x = convnetjs.augment(x, 24);
 
-  var isval = use_validation_data && n%10===0 ? true : false;
-  return {x:x, label:labels[n], isval:isval};
+  var isValidationData = use_validation_data && n%10===0 ? true : false;
+  return {x:x, label:labels[n], isValidationData:isValidationData};
 }
 
 // sample a random testing instance
 var sample_test_instance = function() {
   var b = 20;
-  var k = Math.floor(Math.random()*3000);
-  var n = b*3000+k;
+  var k = Math.floor(Math.random()*glo_batch_size);
+  var n = b*glo_batch_size+k;
 
   var p = img_data[b].data;
   var x = new convnetjs.Vol(28,28,1,0.0);
@@ -204,8 +205,8 @@ $(window).load(function() {
 });
 
 var start_fun = function() {
-  if(loaded[0] && loaded[20]) { 
-    console.log('starting!'); 
+  if(loaded[0] && loaded[20]) {
+    console.log('starting!');
     setInterval(load_and_step, 0); // lets go!
   }
   else { setTimeout(start_fun, 200); } // keep checking
@@ -215,7 +216,7 @@ var load_data_batch = function(batch_num) {
   // Load the dataset with JS in background
   data_img_elts[batch_num] = new Image();
   var data_img_elt = data_img_elts[batch_num];
-  data_img_elt.onload = function() { 
+  data_img_elt.onload = function() {
     var data_canvas = document.createElement('canvas');
     data_canvas.width = data_img_elt.width;
     data_canvas.height = data_img_elt.height;
@@ -223,7 +224,9 @@ var load_data_batch = function(batch_num) {
     data_ctx.drawImage(data_img_elt, 0, 0); // copy it over... bit wasteful :(
     img_data[batch_num] = data_ctx.getImageData(0, 0, data_canvas.width, data_canvas.height);
     loaded[batch_num] = true;
-    if(batch_num < 20) { loaded_train_batches.push(batch_num); }
+    if(batch_num < 20) {
+      loaded_train_batches.push(batch_num);
+    }
     console.log('finished loading data batch ' + batch_num);
   };
   data_img_elt.src = "mnist/mnist_batch_" + batch_num + ".png";
@@ -267,7 +270,7 @@ var draw_activations = function(elt, A, scale, grads) {
         if(draw_grads) {
           var dval = Math.floor((A.get_grad(x,y,d)-mm.minv)/mm.dv*255);
         } else {
-          var dval = Math.floor((A.get(x,y,d)-mm.minv)/mm.dv*255);  
+          var dval = Math.floor((A.get(x,y,d)-mm.minv)/mm.dv*255);
         }
         for(var dx=0;dx<s;dx++) {
           for(var dy=0;dy<s;dy++) {
@@ -280,7 +283,7 @@ var draw_activations = function(elt, A, scale, grads) {
     }
     ctx.putImageData(g, 0, 0);
     elt.appendChild(canv);
-  }  
+  }
 }
 
 var visualize_activations = function(net, elt) {
@@ -400,7 +403,7 @@ var visualize_activations = function(net, elt) {
 // loads a training image and trains on it with the network
 var paused = false;
 var load_and_step = function() {
-  if(paused) return; 
+  if(paused) return;
 
   var sample = sample_training_instance();
   step(sample); // process this image
@@ -428,7 +431,7 @@ var test_predict = function() {
     var preds = [];
     for(var k=0;k<aavg.w.length;k++) { preds.push({k:k,p:aavg.w[k]}); }
     preds.sort(function(a,b){return a.p<b.p ? 1:-1;});
-    
+
     var div = document.createElement('div');
     div.className = 'testdiv';
 
@@ -463,7 +466,7 @@ var step = function(sample) {
   var x = sample.x;
   var y = sample.label;
 
-  if(sample.isval) {
+  if(sample.isValidationData) {
     // use x to build our estimate of validation error
     net.forward(x);
     var yhat = net.getPrediction();
@@ -532,7 +535,7 @@ var step = function(sample) {
   step_num++;
 }
 
-// user settings 
+// user settings
 var change_lr = function() {
   trainer.learning_rate = parseFloat(document.getElementById("lr_input").value);
   update_net_param_display();
@@ -565,7 +568,7 @@ var dump_json = function() {
   document.getElementById("dumpjson").value = JSON.stringify(net.toJSON());
 }
 var clear_graph = function() {
-  lossGraph = new cnnvis.Graph(); // reinit graph too 
+  lossGraph = new cnnvis.Graph(); // reinit graph too
 }
 var reset_all = function() {
   update_net_param_display();
@@ -634,7 +637,7 @@ var change_net = function() {
       <textarea id="dumpjson"></textarea>
     </div>
     <div class="secpart">
-      
+
       <div>
         Loss:<br />
         <canvas id="lossgraph">
@@ -656,13 +659,13 @@ var change_net = function() {
   <h1>Network Visualization</h1>
     <div id="visnet"></div>
   </div>
-  
+
   <div class="divsec">
   <h1>Example predictions on Test set</h1>
     <div id="testset_acc"></div>
   </div>
 
-  </div>  
+  </div>
 </body>
 </html>
 
