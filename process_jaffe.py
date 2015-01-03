@@ -59,8 +59,11 @@ for filename in files:
         training_set[0].append(image_array_1d)
         training_set[1].append(label)
 
-imsave('./data/processed/jaffe_train.png', training_set[0])
-imsave('./data/processed/jaffe_test.png', test_set[0])
+print 'Training Set Size: ' + str(len(training_set[0]))
+print 'Test Set Size: ' + str(len(test_set[0]))
+
+imsave('./data/processed/jaffe_0.png', training_set[0])
+imsave('./data/processed/jaffe_1.png', test_set[0])
 
 labels = 'var labels = ' + repr(list(numpy.concatenate((training_set[1], test_set[1]))))  + ';\n'
 open('./data/processed/jaffe_labels.js', 'w').write(labels)
