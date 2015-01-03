@@ -11,6 +11,7 @@ EMOTION_MAP = {
     'SA': 4,  # Sadness
     'SU': 5,  # Surprise
     'NE': 6,  # Neutral
+    '--': 7,  # Contempt (does not exist in JAFFE)
 }
 
 DATA_LOCATION = './data/jaffe'
@@ -25,6 +26,7 @@ test_set = (
     [],
     []
 )
+first = True
 
 for filename in files:
 
@@ -33,11 +35,15 @@ for filename in files:
         continue
 
     # Open Image
-    image = Image.open(DATA_LOCATION + '/' + filename)
+    image = Image.open(DATA_LOCATION + '/' + filename).convert("L")
     # Convert Image to array
     image_array = numpy.array(image)
     # Comvert Image to 1D array
     image_array_1d = numpy.ravel(image_array)
+
+    if first:
+        print 'Size: ' + str(image_array.shape)
+        first = False
 
     # Find the parts of the filename corresponding to the emotion
     parts = filename.split('.')
