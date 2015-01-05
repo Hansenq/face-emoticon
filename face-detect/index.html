@@ -57,7 +57,7 @@ function detectNewImage(src, async) {
 	image.onload = function () {
 		/* load image, and draw it to canvas */
 		var dim = getImageDim(image);
-		var boundingWidth = document.getElementById("image-viewer").offsetWidth - 2;
+		var boundingWidth = document.getElementById("output").offsetWidth - 2;
 		var boundingHeight = window.innerHeight - (document.getElementById("header").offsetHeight + document.getElementById("footer").offsetHeight) - 120;
 		var image_viewer = document.getElementById("image-viewer");
         var results_viewer = document.getElementById("results-viewer");
