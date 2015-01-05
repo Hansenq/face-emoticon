@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>feature detection</title>
+		<meta charset="utf-8">
+		<style>
+      		#container {
+        	position : relative;
+    		}
+		    #canvas {
+        	position : absolute;
+       		left : 0;
+        	top : 0;
+      		}
+		</style>
+	</head>
+	
+	<body>
+		<script src="./js/BlobBuilder.min.js"></script>
+		<script src="./js/clm.js"></script>
+		<script src="./js/clmtrackr.min.js"></script>
+		<script src="./js/dat.gui.min.js"></script>
+		<script src="./js/entire_face_filter"></script>
+		<script src="./face_deformer.js"></script>
+		<script src="./js/Filesaver.min.js"></script>
+		<script src="./js/frontalface.js"></script>
+		<script src="./js/jquery.imgareaselect.pack.js"></script>
+		<script src="./js/jquery.min.js"></script>
+		<script src="./js/jsfeat-min.js"></script>
+		<script src="./js/jsfeat_detect.js"></script>
+		<script src="./js/left_eye_filter.js"></script>
+		<script src="./js/mosse.js"></script>
+		<script src="./js/mossefilter.js"></script>
+		<script src="./js/nose_filter.js"></script>
+		<script src="./js/numeric-1.2.6.min.js"></script>
+		<script src="./js/right_eye_filter.js"></script>
+		<script src="./js/Stats.js"></script>		
+		<script src="./svmfilter.js"></script>
+		<script src="./js/svmfilter_webgl.js"></script>
+		<script src="./js/svmfilter_fft.js"></script>
+		<script src="./js/utils.js"></script>
+		<script src="./models/model_pca_20_svm.js"></script>
+
+		<div id="content">
+			<div id="container">
+				<canvas id="image" width="625" height="500"></canvas>
+				<canvas id="overlay" width="625" height="500"></canvas>
+			</div>
+
+		<p id="positions"></p>
+
+		<script>
+			//image canvas object
+			var cc = document.getElementById('image').getContext('2d');
+			var overlay = document.getElementById('overlay');
+			//overlay canvas object
+			var overlayCC = overlay.getContext('2d');
+			
+			var img = new Image();
+			img.onload = function() {
+				cc.drawImage(img,0,0,625, 500);
+			};
+			img.src = './media/franck_02159.jpg';
+
+			//initialize and start clmtrackr model
+			var ctrack = new clm.tracker({stopOnConvergence : true});
+			ctrack.init(pModel);
+			ctrack.start(document.getElementById('image'))
+
+			function positionLoop() {
+          		requestAnimationFrame(positionLoop);
+         		var positions = ctrack.getCurrentPosition();
+          		// do something with the positions ...
+          		// print the positions
+          		var positionString = "";
+ 		        if (positions) {
+        		    for (var p = 0;p < 10;p++) {
+              			positionString += "featurepoint "+p+" : ["+positions[p][0].toFixed(2)+","+positions[p][1].toFixed(2)+"]<br/>";
+            		}
+            	document.getElementById('positions').innerHTML = positionString;
+          		}
+        	}
+       		positionLoop();
+
+			//draw fitted model
+			var drawRequest;
+			function drawLoop() {
+				drawRequest = requestAnimFrame(drawLoop);
+				overlayCC.clearRect(0, 0, 720, 576);
+				if (ctrack.getCurrentPosition()) {
+					ctrack.draw(overlay);
+				}
+			}
+			drawLoop();
+
+		</script>
+		</div>
+	</body>
+</html>

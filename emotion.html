@@ -97,23 +97,23 @@ body {
 }
 </style>
 
-<script src="jquery-1.8.3.min.js"></script>
-<script src="../build/vis.js"></script>
-<script src="../build/util.js"></script>
-<script src="../build/convnet.js"></script>
+<script src="convnetjs/demo/jquery-1.8.3.min.js"></script>
+<script src="convnetjs/build/vis.js"></script>
+<script src="convnetjs/build/util.js"></script>
+<script src="convnetjs/build/convnet.js"></script>
 
-<script src="mnist/mnist_labels.js"></script>
+<script src="data/processed/jaffe_labels.js"></script>
 
 <script>
 
 var layer_defs, net, trainer;
 var t = "layer_defs = [];\n\
-layer_defs.push({type:'input', out_sx:24, out_sy:24, out_depth:1});\n\
+layer_defs.push({type:'input', out_sx:256, out_sy:256, out_depth:1});\n\
 layer_defs.push({type:'conv', sx:5, filters:8, stride:1, pad:2, activation:'relu'});\n\
 layer_defs.push({type:'pool', sx:2, stride:2});\n\
 layer_defs.push({type:'conv', sx:5, filters:16, stride:1, pad:2, activation:'relu'});\n\
 layer_defs.push({type:'pool', sx:3, stride:3});\n\
-layer_defs.push({type:'softmax', num_classes:10});\n\
+layer_defs.push({type:'softmax', num_classes:7});\n\
 \n\
 net = new convnetjs.Net();\n\
 net.makeLayers(layer_defs);\n\
@@ -124,8 +124,9 @@ trainer = new convnetjs.SGDTrainer(net, {method:'adadelta', batch_size:20, l2_de
 // ------------------------
 // BEGIN MNIST SPECIFIC STUFF
 // ------------------------
-classes_txt = ['0','1','2','3','4','5','6','7','8','9'];
-var glo_batch_size = 3000;
+classes_txt = ['0','1','2','3','4','5','6'];
+var glo_batch_size = 144;
+var glo_test_batch = 1;
 
 var use_validation_data = true;
 var sample_training_instance = function() {
@@ -137,7 +138,7 @@ var sample_training_instance = function() {
   var n = b*glo_batch_size+k;
 
   // load more batches over time
-  if(step_num%5000===0 && step_num>0) {
+  if(step_num%1000===0 && step_num>0) {
     for(var i=0;i<num_batches;i++) {
       if(!loaded[i]) {
         // load it
@@ -147,43 +148,80 @@ var sample_training_instance = function() {
     }
   }
 
+  // // fetch the appropriate row of the training image and reshape into a Vol
+  // var p = img_data[b].data;
+  // var x = new convnetjs.Vol(256,256,1,0.0);
+  // var W = 256*256;
+  // for(var i=0;i<W;i++) {
+  //   var ix = ((W * k) + i) * 4;
+  //   x.w[i] = p[ix]/255.0;
+  // }
+  // x = convnetjs.augment(x, 24);
+
+  // var isValidationData = use_validation_data && n%10===0 ? true : false;
+  // return {x:x, label:labels[n], isValidationData:isValidationData};
+
+
   // fetch the appropriate row of the training image and reshape into a Vol
   var p = img_data[b].data;
-  var x = new convnetjs.Vol(28,28,1,0.0);
-  var W = 28*28;
+  var x = new convnetjs.Vol(256,256,1,0.0); // 256x256x1 because grayscale
+  var W = 256*256;
   for(var i=0;i<W;i++) {
     var ix = ((W * k) + i) * 4;
     x.w[i] = p[ix]/255.0;
   }
-  x = convnetjs.augment(x, 24);
+  var dx = Math.floor(Math.random()*50-10);
+  var dy = Math.floor(Math.random()*50-10);
+  x = convnetjs.augment(x, 256, dx, dy, Math.random() < 0.5); //maybe flip horizontally
 
-  var isValidationData = use_validation_data && n%10===0 ? true : false;
-  return {x:x, label:labels[n], isValidationData:isValidationData};
+  var isval = use_validation_data && n%10===0 ? true : false;
+  return {x:x, label:labels[n], isval:isval};
 }
 
 // sample a random testing instance
 var sample_test_instance = function() {
-  var b = 20;
+  var b = glo_test_batch;
   var k = Math.floor(Math.random()*glo_batch_size);
   var n = b*glo_batch_size+k;
 
+  // var p = img_data[b].data;
+  // var x = new convnetjs.Vol(28,28,1,0.0);
+  // var W = 28*28;
+  // for(var i=0;i<W;i++) {
+  //   var ix = ((W * k) + i) * 4;
+  //   x.w[i] = p[ix]/255.0;
+  // }
+  // var xs = [];
+  // for(var i=0;i<4;i++) {
+  //   xs.push(convnetjs.augment(x, 24));
+  // }
+  // // return multiple augmentations, and we will average the network over them
+  // // to increase performance
+  // return {x:xs, label:labels[n]};
+
   var p = img_data[b].data;
-  var x = new convnetjs.Vol(28,28,1,0.0);
-  var W = 28*28;
+  var x = new convnetjs.Vol(256,256,1,0.0);
+  var W = 256*256;
   for(var i=0;i<W;i++) {
     var ix = ((W * k) + i) * 4;
     x.w[i] = p[ix]/255.0;
   }
+
+  // distort position and maybe flip
   var xs = [];
-  for(var i=0;i<4;i++) {
-    xs.push(convnetjs.augment(x, 24));
+  //xs.push(x, 256, 0, 0, false); // push an un-augmented copy
+  for(var k=0;k<6;k++) {
+    var dx = Math.floor(Math.random()*50-10);
+    var dy = Math.floor(Math.random()*50-10);
+    xs.push(convnetjs.augment(x, 256, dx, dy, k>2));
   }
+
   // return multiple augmentations, and we will average the network over them
   // to increase performance
   return {x:xs, label:labels[n]};
 }
 
-var num_batches = 21; // 20 training batches, 1 test
+var num_batches = 2; // 1 training batches, 1 test
 var data_img_elts = new Array(num_batches);
 var img_data = new Array(num_batches);
 var loaded = new Array(num_batches);
@@ -200,12 +238,12 @@ $(window).load(function() {
   for(var k=0;k<loaded.length;k++) { loaded[k] = false; }
 
   load_data_batch(0); // async load train set batch 0 (6 total train batches)
-  load_data_batch(20); // async load test set (batch 6)
+  load_data_batch(glo_test_batch); // async load test set (batch 6)
   start_fun();
 });
 
 var start_fun = function() {
-  if(loaded[0] && loaded[20]) {
+  if(loaded[0] && loaded[glo_test_batch]) {
     console.log('starting!');
     setInterval(load_and_step, 0); // lets go!
   }
@@ -229,7 +267,7 @@ var load_data_batch = function(batch_num) {
     }
     console.log('finished loading data batch ' + batch_num);
   };
-  data_img_elt.src = "mnist/mnist_batch_" + batch_num + ".png";
+  data_img_elt.src = "data/processed/jaffe_" + batch_num + ".png";
 }
 
 // ------------------------
@@ -245,7 +283,7 @@ var f2t = cnnutil.f2t;
 // if grads is true then gradients are used instead
 var draw_activations = function(elt, A, scale, grads) {
 
-  var s = scale || 2; // scale
+  var s = scale || 5; // scale
   var draw_grads = false;
   if(typeof(grads) !== 'undefined') draw_grads = grads;
 
@@ -287,6 +325,9 @@ var draw_activations = function(elt, A, scale, grads) {
 }
 
 var visualize_activations = function(net, elt) {
+
+  // Simplify the HTML on the page
+  return;
 
   // clear the element
   elt.innerHTML = "";
@@ -429,7 +470,9 @@ var test_predict = function() {
       aavg.addFrom(a);
     }
     var preds = [];
-    for(var k=0;k<aavg.w.length;k++) { preds.push({k:k,p:aavg.w[k]}); }
+    for(var k=0;k<aavg.w.length;k++) {
+      preds.push({k:k,p:aavg.w[k]});
+    }
     preds.sort(function(a,b){return a.p<b.p ? 1:-1;});
 
     var div = document.createElement('div');
