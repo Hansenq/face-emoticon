@@ -62,7 +62,7 @@ function detectNewImage(src, async) {
         document.getElementById("loading").innerHTML = "";
         document.getElementById("detection-time").innerHTML = "[...]";
 		var dim = getImageDim(image);
-		var boundingWidth = document.getElementById("output").offsetWidth - 2;
+		var boundingWidth = document.getElementById("urlbox").offsetWidth - 2;
 		var boundingHeight = window.innerHeight - (document.getElementById("header").offsetHeight + document.getElementById("footer").offsetHeight) - 120;
 		var image_viewer = document.getElementById("image-viewer");
         var results_viewer = document.getElementById("results-viewer");
@@ -79,7 +79,6 @@ function detectNewImage(src, async) {
 		}
 		image_viewer.style.width = newWidth.toString() + "px";
 		image_viewer.style.height = newHeight.toString() + "px";
-        results_viewer.style.width = newWidth.toString() + "px";
 		results_viewer.style.height = newHeight.toString() + "px";
 		canvas_image.width = newWidth;
 		canvas_image.style.width = newWidth.toString() + "px";
