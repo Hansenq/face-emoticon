@@ -14,7 +14,7 @@
             <div id="image-viewer"><div id="image-help">Drag and drop image<br/>OR<br/>Click to upload</div><input type="file" id="file-selector" accept="image/*"/><canvas id="image-out"/></div>
         </div>
         <div id="output">
-            <div id="stats">Detected <span id="num-faces">[?]</span> faces</div>
+            <div id="stats"><span id="loading"></span>Detected <span id="num-faces">[?] faces</span> in <span id="detection-time">[?]</span> ms</div>
             <div id="results-viewer"/></div>
         </div>
     </div>
@@ -51,11 +51,16 @@ function getImageDim(image) {
 }
 
 function detectNewImage(src, async) {
+    document.getElementById("loading").innerHTML = "(Loading...) ";
+    document.getElementById("detection-time").innerHTML = "[...]";
+    document.getElementById("num-faces").innerHTML = "[?] faces";
 	var image = new Image();
 	var canvas_image = document.getElementById("image-out");
 	var ctx = canvas_image.getContext("2d");
 	image.onload = function () {
 		/* load image, and draw it to canvas */
+        document.getElementById("loading").innerHTML = "";
+        document.getElementById("detection-time").innerHTML = "[...]";
 		var dim = getImageDim(image);
 		var boundingWidth = document.getElementById("output").offsetWidth - 2;
 		var boundingHeight = window.innerHeight - (document.getElementById("header").offsetHeight + document.getElementById("footer").offsetHeight) - 120;
@@ -81,8 +86,10 @@ function detectNewImage(src, async) {
 		canvas_image.height = newHeight;
 		canvas_image.style.height = newHeight.toString() + "px";
 		ctx.drawImage(image, 0, 0, newWidth, newHeight);
+        elapsed_time = (new Date()).getTime();
 		function post(comp) {
-			document.getElementById("num-faces").innerHTML = comp.length.toString();
+            document.getElementById("detection-time").innerHTML = Math.round((new Date()).getTime() - elapsed_time).toString();
+			document.getElementById("num-faces").innerHTML = comp.length.toString() + " face" + (comp.length == 1 ? "" : "s");
 			ctx.lineWidth = 2;
 			ctx.strokeStyle = 'rgba(255,165,0,0.8)';
 			/* draw detected area */
