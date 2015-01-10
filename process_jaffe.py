@@ -14,7 +14,9 @@ EMOTION_MAP = {
     '--': 7,  # Contempt (does not exist in JAFFE)
 }
 
-DATA_LOCATION = './data/jaffe'
+DATA_LOCATION = './data/jaffe_raw'
+
+DEST_FOLDER = './data/jaffe'
 
 files = os.listdir(DATA_LOCATION)
 
@@ -27,6 +29,7 @@ test_set = (
     []
 )
 first = True
+count = 0
 
 for filename in files:
 
@@ -36,34 +39,39 @@ for filename in files:
 
     # Open Image
     image = Image.open(DATA_LOCATION + '/' + filename).convert("L")
-    # Convert Image to array
-    image_array = numpy.array(image)
+    # Convert Image to array.
+    # image_array = numpy.array(image)
     # Comvert Image to 1D array
-    image_array_1d = numpy.ravel(image_array)
+    # image_array_1d = numpy.ravel(image_array)
 
-    if first:
-        print 'Size: ' + str(image_array.shape)
-        first = False
+    # if first:
+    #     print 'Size: ' + str(image_array.shape)
+    #     first = False
 
     # Find the parts of the filename corresponding to the emotion
     parts = filename.split('.')
     emotion = parts[1][:-1]
     label = EMOTION_MAP[emotion]
 
-    if parts[1][-1] == '3':
-        # Add to testing set
-        test_set[0].append(image_array_1d)
-        test_set[1].append(label)
-    else:
-        # Add to training set
-        training_set[0].append(image_array_1d)
-        training_set[1].append(label)
+    image.save('/'.join([DEST_FOLDER, 'jaffe_' + str(count) + '_' + str(label) + '.png']))
+    count += 1
 
-print 'Training Set Size: ' + str(len(training_set[0]))
-print 'Test Set Size: ' + str(len(test_set[0]))
+    # if parts[1][-1] == '3':
+    #     # Add to testing set
+    #     test_set[0].append(image_array_1d)
+    #     test_set[1].append(label)
+    # else:
+    #     # Add to training set
+    #     training_set[0].append(image_array_1d)
+    #     training_set[1].append(label)
 
-imsave('./data/processed/jaffe_0.png', training_set[0])
-imsave('./data/processed/jaffe_1.png', test_set[0])
+# print 'Training Set Size: ' + str(len(training_set[0]))
+# print 'Test Set Size: ' + str(len(test_set[0]))
+print 'Processed ' + str(count) + ' photos.'
 
-labels = 'var labels = ' + repr(list(numpy.concatenate((training_set[1], test_set[1]))))  + ';\n'
-open('./data/processed/jaffe_labels.js', 'w').write(labels)
+# Process image to fit the convnetjs ConvNet demos data input format.
+# imsave('./data/processed/jaffe_0.png', training_set[0])
+# imsave('./data/processed/jaffe_1.png', test_set[0])
+
+# labels = 'var labels = ' + repr(list(numpy.concatenate((training_set[1], test_set[1]))))  + ';\n'
+# open('./data/processed/jaffe_labels.js', 'w').write(labels)

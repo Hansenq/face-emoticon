@@ -123,7 +123,7 @@ for sub_folder in sub_folders:
             # process_photo(sub_folder, scene_folder, image_name)
             move_photo(sub_folder, scene_folder, image_name)
 
-
+print 'Processed ' + str(count) + ' photos.'
 
 # Process image to fit the convnetjs ConvNet demos data input format.
 # imsave('./data/processed/ck+_train.png', training_set[0])
