@@ -29,6 +29,7 @@ test_set = (
     []
 )
 first = True
+label_map = []
 count = 0
 
 for filename in files:
@@ -52,8 +53,10 @@ for filename in files:
     parts = filename.split('.')
     emotion = parts[1][:-1]
     label = EMOTION_MAP[emotion]
+    count_str = "%03d" % (count,)
+    image.save('/'.join([DEST_FOLDER, 'jaffe_' + count_str + '.png']))
+    label_map.append(label)
 
-    image.save('/'.join([DEST_FOLDER, 'jaffe_' + str(count) + '_' + str(label) + '.png']))
     count += 1
 
     # if parts[1][-1] == '3':
@@ -65,9 +68,6 @@ for filename in files:
     #     training_set[0].append(image_array_1d)
     #     training_set[1].append(label)
 
-# print 'Training Set Size: ' + str(len(training_set[0]))
-# print 'Test Set Size: ' + str(len(test_set[0]))
-print 'Processed ' + str(count) + ' photos.'
 
 # Process image to fit the convnetjs ConvNet demos data input format.
 # imsave('./data/processed/jaffe_0.png', training_set[0])
@@ -75,3 +75,11 @@ print 'Processed ' + str(count) + ' photos.'
 
 # labels = 'var labels = ' + repr(list(numpy.concatenate((training_set[1], test_set[1]))))  + ';\n'
 # open('./data/processed/jaffe_labels.js', 'w').write(labels)
+labels = 'var labels = ' + repr(label_map)  + ';\n'
+open('./data/processed/jaffe_labels.js', 'w').write(labels)
+
+
+# print 'Training Set Size: ' + str(len(training_set[0]))
+# print 'Test Set Size: ' + str(len(test_set[0]))
+print 'Processed ' + str(count) + ' photos.'
+print 'Stored ' + str(len(label_map)) + ' labels.'
