@@ -17,6 +17,7 @@ EMOTION_MAP = {
 DATA_LOCATION = './data/jaffe_raw'
 
 DEST_FOLDER = './data/jaffe'
+TEST_FOLDER = './data/jaffe_test'
 
 files = os.listdir(DATA_LOCATION)
 
@@ -29,8 +30,12 @@ test_set = (
     []
 )
 first = True
-label_map = []
+
+label_list = []
+label_test = []
+
 count = 0
+count_test = 0
 
 for filename in files:
 
@@ -53,11 +58,21 @@ for filename in files:
     parts = filename.split('.')
     emotion = parts[1][:-1]
     label = EMOTION_MAP[emotion]
-    count_str = "%03d" % (count,)
-    image.save('/'.join([DEST_FOLDER, 'jaffe_' + count_str + '.png']))
-    label_map.append(label)
 
-    count += 1
+    if parts[1][-1] == '3':
+        # Add to testing set
+        count_str = "%03d" % (count_test,)
+        image.save('/'.join([TEST_FOLDER, 'jaffe_' + count_str + '.png']))
+        label_test.append(label)
+        count_test += 1
+    else:
+        # Add to training set
+        count_str = "%03d" % (count,)
+        image.save('/'.join([DEST_FOLDER, 'jaffe_' + count_str + '.png']))
+        label_list.append(label)
+        count += 1
+
+    image.close()
 
     # if parts[1][-1] == '3':
     #     # Add to testing set
@@ -75,11 +90,15 @@ for filename in files:
 
 # labels = 'var labels = ' + repr(list(numpy.concatenate((training_set[1], test_set[1]))))  + ';\n'
 # open('./data/processed/jaffe_labels.js', 'w').write(labels)
-labels = 'var labels = ' + repr(label_map)  + ';\n'
+labels = 'var labels = ' + repr(label_list)  + ';\n'
 open('./data/processed/jaffe_labels.js', 'w').write(labels)
+labels = 'var labels = ' + repr(label_test)  + ';\n'
+open('./data/processed/jaffe_test_labels.js', 'w').write(labels)
 
 
 # print 'Training Set Size: ' + str(len(training_set[0]))
 # print 'Test Set Size: ' + str(len(test_set[0]))
 print 'Processed ' + str(count) + ' photos.'
-print 'Stored ' + str(len(label_map)) + ' labels.'
+print 'Stored ' + str(len(label_list)) + ' labels.'
+print 'Processed ' + str(count_test) + ' test photos.'
+print 'Stored ' + str(len(label_test)) + ' test labels.'

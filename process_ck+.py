@@ -26,6 +26,7 @@ EMOTION_FOLDER_NAME = 'Emotion'
 PHOTO_FOLDER_NAME = 'cohn-kanade-images'
 
 DEST_FOLDER = './data/ck+'
+TEST_FOLDER = './data/ck+_test'
 
 training_set = (
     [],
@@ -35,9 +36,12 @@ test_set = (
     [],
     []
 )
+label_list = []
+label_test = []
 first = True
 
 count = 0
+count_test = 0
 
 def get_emotion_label(sub_folder, scene_folder, image_name):
     emotion_loc = '/'.join([BASE_DIR, EMOTION_FOLDER_NAME, sub_folder, scene_folder, image_name]) + '_emotion.txt'
@@ -84,16 +88,26 @@ def process_photo(sub_folder, scene_folder, image_name):
 
 
 def move_photo(sub_folder, scene_folder, image_name):
-    global count
+    global count, count_test
 
     image_loc = '/'.join([BASE_DIR, PHOTO_FOLDER_NAME, sub_folder, scene_folder, image_name]) + '.png'
 
     label = get_emotion_label(sub_folder, scene_folder, image_name)
 
-    dest_loc = '/'.join([DEST_FOLDER, 'ck+_' + str(count) + '_' + str(label) + '.png'])
-    shutil.copy2(image_loc, dest_loc)
-
-    count += 1
+    if randint(0,4) == 0:
+        # Test Set
+        label_test.append(label)
+        count_str = "%03d" % (count_test,)
+        dest_loc = '/'.join([TEST_FOLDER, 'ck+_' + count_str + '.png'])
+        shutil.copy2(image_loc, dest_loc)
+        count_test += 1
+    else:
+        # Training Set
+        label_list.append(label)
+        count_str = "%03d" % (count,)
+        dest_loc = '/'.join([DEST_FOLDER, 'ck+_' + count_str + '.png'])
+        shutil.copy2(image_loc, dest_loc)
+        count += 1
 
 # One folder for each subject
 sub_folders = listdir('/'.join([BASE_DIR, EMOTION_FOLDER_NAME]))
@@ -123,11 +137,18 @@ for sub_folder in sub_folders:
             # process_photo(sub_folder, scene_folder, image_name)
             move_photo(sub_folder, scene_folder, image_name)
 
-print 'Processed ' + str(count) + ' photos.'
-
 # Process image to fit the convnetjs ConvNet demos data input format.
 # imsave('./data/processed/ck+_train.png', training_set[0])
 # imsave('./data/processed/ck+_test.png', test_set[0])
 
 # labels = 'var labels = ' + repr(list(numpy.concatenate((training_set[1], test_set[1]))))  + ';\n'
 # open('./data/processed/ck+_labels.js', 'w').write(labels)
+labels = 'var labels = ' + repr(label_list)  + ';\n'
+open('./data/processed/ck+_labels.js', 'w').write(labels)
+labels = 'var labels = ' + repr(label_test)  + ';\n'
+open('./data/processed/ck+_test_labels.js', 'w').write(labels)
+
+print 'Processed ' + str(count) + ' photos.'
+print 'Stored ' + str(len(label_list)) + ' labels.'
+print 'Processed ' + str(count_test) + ' test photos.'
+print 'Stored ' + str(len(label_test)) + ' test labels.'
