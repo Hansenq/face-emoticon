@@ -1,0 +1,226 @@
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+ 	border: 0;
+	font-size: 100%;
+	font: inherit;
+ 	vertical-align: baseline;
+}
+
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer2, header, hgroup, menu, nav, section {
+	display: block;
+}
+
+body {
+	line-height: 1;
+	font-family: "helvetica",tahoma,verdana,arial,sans-serif;
+    font-size: 11pt;
+}
+
+a, a:link, a:visited {
+	color: #fa7f00;
+	text-decoration: none;
+}
+
+a:hover {
+	color: #fa7f00;
+	text-decoration: underline;
+}
+
+#container {
+	margin: auto;
+    min-width: 650px;
+	max-width: 1000px;
+}
+
+#header {
+	margin-top: 20px;
+	margin-bottom: 20px;
+	margin-left: auto;
+	margin-right: auto;
+	text-align: left;
+}
+
+#header .title {
+	font-size: 1.8em;
+	color: #000;
+}
+
+#header .subtitle {
+	color: #000;
+	font-size: 0.8em;
+	margin-top: 5px;
+}
+
+#content {
+	margin: 20px 0px;
+    min-width: 700px;
+	max-width: 1000px;
+    white-space: nowrap;
+    display: table;
+}
+
+#content div{
+    vertical-align: top;
+    display: inline-block;
+    width: 50%;
+}
+
+#content #input {
+    box-sizing: border-box;
+    padding-right: 20px;
+    height: 100%;
+}
+
+#content #input #urlbox {
+    display: table;
+    width: 100%;
+}
+
+#content #input #urlbox #urlbox-row {
+    display: table-row;
+}
+
+#content #input #urlbox #urlbox-row #url-text, #url-btn {
+    display: table-cell;
+}
+
+#content #input #urlbox #urlbox-row #url-text {
+    width: 100%;
+}
+
+#content #input #urlbox #urlbox-row #url-text input[type="text"] {
+    float: left;
+    width: 100%;
+    border-radius: 4px;
+    color: #000;
+    background: #fff;
+    padding: 4px;
+    border: 1px dotted black;
+    text-decoration: none;
+}
+
+#content #input #urlbox #urlbox-row #url-btn input[type="button"] {
+    margin-left: 16px;
+    border-radius: 4px;
+    color: #000;
+    background: #fff;
+    padding: 4px 15px;
+    border: 1px solid black;
+    text-decoration: none;
+}
+
+#content #input #urlbox #urlbox-row #url-btn input[type="button"]:hover {
+    background: #f0f0f0;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#content #input #image-viewer {
+    margin-top: 20px;
+    width: 100%;
+    height: 200px;
+
+    border-radius: 4px;
+    color: #000;
+    margin-right: 10px;
+    border: 1px dotted black;
+
+    position: relative;
+}
+
+#content #input #image-viewer #image-out {
+	border-radius: 4px;
+	position: absolute;
+}
+
+#content #input #image-viewer #image-help {
+    box-sizing: border-box;
+    color: #454545;
+    text-align: center;
+    line-height: 125%;
+    border-radius: 4px;
+    background: #fff;
+    padding: 5px;
+    opacity: 0.5;
+    width: 200px;
+    left: 50%;
+    margin-left: -100px;
+    top: 50%;
+    margin-top: -35px;
+    position: absolute;
+    z-index: 0;
+}
+
+#content #input #image-viewer #file-selector {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+#content #output {
+    box-sizing: border-box;
+    padding-left: 20px;
+    border-left: 1px solid black;
+    height: 100%;
+}
+
+#content #output #stats {
+    float: left;
+    margin-top: 1px;
+    padding: 4px 0px;
+}
+
+#content #output #results-viewer {
+    float: left;
+    margin-top: 21px;
+    box-sizing: border-box;
+    width: 100%;
+    height: 200px;
+    color: #000;
+    background: #fff;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    white-space: normal;
+}
+
+.thumbnail {
+    border:1px solid black;
+    margin-right: 4px;
+    display: inline-block;
+}
+
+#footer {
+    width: 100%;
+    text-align: center;
+    line-height: 150%;
+    font-size: 0.8em;
+    margin: 12px 0px;
+    padding: 12px 0px;
+    color: #454545;
+    border-top: 2px black dotted;
+}
+
+#footer a {
+	color: #454545;
+}
+
