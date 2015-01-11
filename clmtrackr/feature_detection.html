@@ -53,7 +53,7 @@
           imageCC.drawImage(img,0,0,canvasInput.width,canvasInput.height);
         };
 
-        var source_name = '../data/ck+/ck+_'
+        var source_name = '../data/ck+_test_scaled/ck+_'
 
         function pad(num, size) {
           var s = num+"";
@@ -102,7 +102,7 @@
           }
 
           var blob = new Blob(converged_pos);
-          saveAs(blob,'ck+_' + image_padded_count + '.txt')
+          saveAs(blob,'ck+_test_scaled_' + image_padded_count + '.txt')
         }, false);
 
 			</script>
