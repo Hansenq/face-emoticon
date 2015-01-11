@@ -25,8 +25,11 @@ BASE_DIR = HOME_DIR + '/Downloads/CK+'
 EMOTION_FOLDER_NAME = 'Emotion'
 PHOTO_FOLDER_NAME = 'cohn-kanade-images'
 
-DEST_FOLDER = './data/ck+'
-TEST_FOLDER = './data/ck+_test'
+DEST_FOLDER = './data/ck+_scaled'
+TEST_FOLDER = './data/ck+_test_scaled'
+
+IMAGE_WIDTH = 480
+IMAGE_HEIGHT = 480
 
 training_set = (
     [],
@@ -58,10 +61,10 @@ def process_photo(sub_folder, scene_folder, image_name):
     image = Image.open(image_loc).convert("L")
     # Fix issues with the image + crop to 640x480
     (width, height) = image.size
-    if width > 640:
-        image = image.crop(((width - 640) / 2, 0, width - (width - 640) / 2, height))
-    if height > 480:
-        image = image.crop((0, (height - 480) / 2, 640, height - (height - 480) / 2))
+    if width > IMAGE_WIDTH:
+        image = image.crop(((width - IMAGE_WIDTH) / 2, 0, width - (width - IMAGE_WIDTH) / 2, height))
+    if height > IMAGE_HEIGHT:
+        image = image.crop((0, (height - IMAGE_HEIGHT) / 2, IMAGE_WIDTH, height - (height - IMAGE_HEIGHT) / 2))
 
     # Emotion label
     label = get_emotion_label(sub_folder, scene_folder, image_name)
@@ -91,6 +94,16 @@ def move_photo(sub_folder, scene_folder, image_name):
     global count, count_test
 
     image_loc = '/'.join([BASE_DIR, PHOTO_FOLDER_NAME, sub_folder, scene_folder, image_name]) + '.png'
+    image = Image.open(image_loc).convert("L")
+    # Fix issues with the image + crop to 640x480
+    (width, height) = image.size
+    if width > IMAGE_WIDTH:
+        image = image.crop(((width - IMAGE_WIDTH) / 2, 0, width - (width - IMAGE_WIDTH) / 2, height))
+    if height > IMAGE_HEIGHT:
+        image = image.crop((0, (height - IMAGE_HEIGHT) / 2, IMAGE_WIDTH, height - (height - IMAGE_HEIGHT) / 2))
+
+    # Resize image to scale
+    image = image.resize((256, 256))
 
     label = get_emotion_label(sub_folder, scene_folder, image_name)
 
@@ -99,15 +112,18 @@ def move_photo(sub_folder, scene_folder, image_name):
         label_test.append(label)
         count_str = "%03d" % (count_test,)
         dest_loc = '/'.join([TEST_FOLDER, 'ck+_' + count_str + '.png'])
-        shutil.copy2(image_loc, dest_loc)
+        # shutil.copy2(image_loc, dest_loc)
+        image.save(dest_loc)
         count_test += 1
     else:
         # Training Set
         label_list.append(label)
         count_str = "%03d" % (count,)
         dest_loc = '/'.join([DEST_FOLDER, 'ck+_' + count_str + '.png'])
-        shutil.copy2(image_loc, dest_loc)
+        # shutil.copy2(image_loc, dest_loc)
+        image.save(dest_loc)
         count += 1
+    image.close()
 
 # One folder for each subject
 sub_folders = listdir('/'.join([BASE_DIR, EMOTION_FOLDER_NAME]))
