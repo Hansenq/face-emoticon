@@ -89,6 +89,7 @@ a:hover {
 #content #input #urlbox {
     display: table;
     width: 100%;
+    visibility: hidden;
 }
 
 #content #input #urlbox #urlbox-row {
