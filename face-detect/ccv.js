@@ -407,10 +407,17 @@ var ccv = {
 				{
 					var n = comps[i].neighbors;
 					if (n >= min_neighbors)
+                        var w = (comps[i].width * 2 + n) / (2 * n);
+                        var h = (comps[i].height * 2 + n) / (2 * n);
+                        if (w * 23 / 18 > h) {
+                            h = w * 23 / 18;
+                        } else if (w * 23 / 18 < h) {
+                            w = h * 18 / 23;
+                        }
 						seq2.push({"x" : (comps[i].x * 2 + n) / (2 * n),
 								   "y" : (comps[i].y * 2 + n) / (2 * n),
-								   "width" : (comps[i].width * 2 + n) / (2 * n),
-								   "height" : (comps[i].height * 2 + n) / (2 * n),
+								   "width" : w,
+								   "height" : h,
 								   "neighbors" : comps[i].neighbors,
 								   "confidence" : comps[i].confidence});
 				}

@@ -93,17 +93,10 @@ function detectNewImage(src, async) {
 			ctx.strokeStyle = 'rgba(255,165,0,0.8)';
 			/* draw detected area */
 			for (var i = 0; i < comp.length; i++) {
-                var w = comp[i].width;
-                var h = comp[i].height;
-                if (w * 23 / 18 > h) {
-                    h = w * 23 / 18;
-                } else if (w * 23 / 18 < h) {
-                    w = h * 18 / 23;
-                }
                 var canvas = document.createElement("canvas");
                 canvas.width = 144;
                 canvas.height = 184;
-                canvas.getContext("2d").drawImage(image, comp[i].x, comp[i].y, w, h, 0, 0, 144, 184);
+                canvas.getContext("2d").drawImage(image, comp[i].x, comp[i].y, comp[i].width, comp[i].height, 0, 0, 144, 184);
                 var img = document.createElement("img");
                 img.src = canvas.toDataURL("image/png");
                 img.className = "thumbnail";
@@ -111,7 +104,7 @@ function detectNewImage(src, async) {
                 else results_viewer.appendChild(img);
 
                 ctx.beginPath();
-                ctx.rect(comp[i].x * scale, comp[i].y * scale, w * scale, h * scale);
+                ctx.rect(comp[i].x * scale, comp[i].y * scale, comp[i].width * scale, comp[i].height * scale);
 				ctx.stroke();
             }
 		}
