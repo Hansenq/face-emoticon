@@ -6,6 +6,22 @@
 <title>Face Detector</title>
 </head>
 <body>
+<script src="webcam.js"></script>
+
+    <div id="my_camera" style="width:320px; height:240px;"></div>
+    <div id="my_result"></div>
+
+    <script language="JavaScript">
+        Webcam.attach( '#my_camera' );
+
+        function take_snapshot() {
+            Webcam.snap( function(data_uri) {
+                document.getElementById('my_result').innerHTML = '<img src="'+data_uri+'"/>';
+            } );
+        }
+    </script>
+
+    <a href="javascript:void(take_snapshot())">Take Snapshot</a>
 <div id="container">
 	<div id="header"><div class="title">Javascript Face Detector</div><div class="subtitle">This tool identifies human faces in a photograph</div></div>
     <div id="content">
@@ -185,8 +201,12 @@ document.getElementById("image-viewer").addEventListener("drop", function (e) {
 document.getElementById("url-submit").addEventListener("click", function(e) {
 	var url = document.getElementById("url-image").value;
 	if (url.length > 0) {
-		window.location.hash = "#" + encodeURIComponent(url);
-		detectNewImage("loader.php?src=" + encodeURIComponent((url.substr(0, 7).toLowerCase() == "http://") ? url : "http://" + url), async);
+        var img = new Image;
+        img.crossOrigin = "anonymous";
+        img.src = url;
+        detectNewImage(url, async);
+		//window.location.hash = "#" + encodeURIComponent(url);
+		//detectNewImage("loader.php?src=" + encodeURIComponent((url.substr(0, 7).toLowerCase() == "http://") ? url : "http://" + url), async);
 	}
 });
 </script>
