@@ -11,6 +11,7 @@ body {
 
 <!-- import convnetjs library -->
 <script src="convnetjs/build/convnet.js"></script>
+<script src="/data/processed/jaffe_labels.js"></script>
 
 <!-- javascript goes here -->
 <script type="text/javascript">
@@ -20,15 +21,22 @@ function periodic() {
   d.innerHTML = 'Random number: ' + Math.random()
 }
 
+
+
+function jaffe_data() {
+  // jaffe_labels is a array of labels
+}
+
 var net; // declared outside -> global variable in window scope
 function start() {
   // this gets executed on startup
   var layer_defs = [];
-  // input layer of size 1x1x2 (all volumes are 3D)
-  layer_defs.push({type:'input', out_sx:1, out_sy:1, out_depth:2});
+  // input layer of size 1x1x71 (all volumes are 3D)
+  layer_defs.push({type:'input', out_sx:1, out_sy:2, out_depth:71});
   // some fully connected layers
   layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
   layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
+  // layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
   // a softmax classifier predicting probabilities for two classes: 0,1
   layer_defs.push({type:'softmax', num_classes:2});
 
