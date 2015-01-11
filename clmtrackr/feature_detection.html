@@ -30,8 +30,6 @@
       <p id="positions"></p>
 
 			<script>
-        for (image_count = 0; image_count < 1; image_count++) {
-
 				var imageCC = document.getElementById('image').getContext('2d');
         var canvasInput = document.getElementById('canvas');
         var cc = canvasInput.getContext('2d');
@@ -41,8 +39,14 @@
           imageCC.drawImage(img,0,0,canvasInput.width,canvasInput.height);
         };
 
-        var source_name = './jaffe/jaffe_0_'
-        img.src = source_name + image_count + '.png';
+        var source_name = '../data/jaffe/jaffe_'
+        function pad(num, size) {
+          var s = num+"";
+          while (s.length < size) s = "0" + s;
+          return s;
+        }
+        image_padded_count = pad(image_count, 3)
+        img.src = source_name + image_padded_count + '.png';
 
         var ctracker = new clm.tracker({stopOnConvergence : true});
         ctracker.init(pModel);
@@ -82,9 +86,9 @@
           }
 
           var blob = new Blob(converged_pos);
-          saveAs(blob,source_name + image_count + '.txt')
+          saveAs(blob,'jaffe_' + image_padded_count + '.txt')
         }, false);
-        }
+        
 			</script>
 		</div>
 	</body>
