@@ -1,408 +1,746 @@
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-<title>ConvNetJS demo: Classify toy 2D data</title>
-<link href='http://fonts.googleapis.com/css?family=Cabin' rel='stylesheet' type='text/css'>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>ConvNetJS MNIST demo</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
 
-<script src="/convnetjs/demo/jquery-1.8.3.min.js"></script>
-<script src="/convnetjs/demo/npgmain.js"></script>
-<script src="/convnetjs/build/convnet.js"></script>
-<script src="/convnetjs/build/util.js"></script>
-<script type="text/javascript">
+<style>
+.layer {
+  border: 1px solid #999;
+  margin-bottom: 5px;
+  text-align: left;
+  padding: 10px;
+}
+.layer_act {
+  width: 450px;
+  float: right;
+}
+.ltconv {
+  background-color: #FDD;
+}
+.ltrelu {
+  background-color: #FDF;
+}
+.ltpool {
+  background-color: #DDF;
+}
+.ltsoftmax {
+  background-color: #FFD;
+}
+.ltfc {
+  background-color: #DFF;
+}
+.ltlrn {
+  background-color: #DFD;
+}
+.ltdropout {
+  background-color: #AAA;
+}
+.ltitle {
+  color: #333;
+  font-size: 18px;
+}
+.actmap {
+  margin: 1px;
+}
+#trainstats {
+  text-align: left;
+}
+.clear {
+  clear: both;
+}
+#wrap {
+  width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+h1 {
+  font-size: 16px;
+  color: #333;
+  background-color: #DDD;
+  border-bottom: 1px #999 solid;
+  text-align: center;
+}
+.secpart {
+  width: 400px;
+  float: left;
+}
+#lossgraph {
+  /*border: 1px solid #F0F;*/
+  width: 100%;
+}
+.probsdiv canvas {
+  float: left;
+}
+.probsdiv {
+  height: 60px;
+  width: 180px;
+  display: inline-block;
+  font-size: 12px;
+  box-shadow: 0px 0px 2px 2px #EEE;
+  margin: 5px;
+  padding: 5px;
+  color: black;
+}
+.pp {
+  margin: 1px;
+  padding: 1px;
+}
+#testset_acc {
+  margin-bottom: 200px;
+}
+body {
+  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+}
+</style>
 
-var data, labels, N;
-var ss = 50.0; // scale for drawing
 
-// create neural net
+<script src="convnetjs/demo/jquery-1.8.3.min.js"></script>
+<script src="convnetjs/build/vis.js"></script>
+<script src="convnetjs/build/util.js"></script>
+<script src="convnetjs/build/convnet.js"></script>
+
+<script src="data/processed/ckp_scaled_features.js"></script>
+<script src="data/processed/ckp_test_scaled_features.js"></script>
+<script src="data/processed/ck+_labels.js"></script>
+<script src="data/processed/ck+_test_labels.js"></script>
+<script src="data/processed/jaffe_features.js"></script>
+<script src="data/processed/jaffe_test_features.js"></script>
+<script src="data/processed/jaffe_labels.js"></script>
+<script src="data/processed/jaffe_test_labels.js"></script>
+
+
+<script>
+
 var layer_defs, net, trainer;
 var t = "\n\
-layer_defs = [];\n\
-layer_defs.push({type:'input', out_sx:1, out_sy:1, out_depth:2});\n\
-layer_defs.push({type:'fc', num_neurons:6, activation: 'tanh'});\n\
-layer_defs.push({type:'fc', num_neurons:2, activation: 'tanh'});\n\
-layer_defs.push({type:'softmax', num_classes:2});\n\
+// this gets executed on startup\n\
+var layer_defs = [];\n\
+// input layer of size 1x1x71 (all volumes are 3D)\n\
+layer_defs.push({type:'input', out_sx:2, out_sy:1, out_depth:71});\n\
+// some fully connected layers\n\
+// layer_defs.push({type:'fc', num_neurons:100, activation:'relu'});\n\
+layer_defs.push({type:'fc', num_neurons:700, activation:'relu'});\n\
+// layer_defs.push({type:'fc', num_neurons:100, activation:'relu'});\n\
+// a softmax classifier predicting probabilities for six classes\n\
+// layer_defs.push({type:'softmax', num_classes:6});\n\
+layer_defs.push({type:'svm', num_classes:6});\n\
 \n\
+// create a net out of it\n\
 net = new convnetjs.Net();\n\
 net.makeLayers(layer_defs);\n\
 \n\
-trainer = new convnetjs.SGDTrainer(net, {learning_rate:0.01, momentum:0.1, batch_size:10, l2_decay:0.001});\n\
+trainer = new convnetjs.SGDTrainer(net, {method:'adadelta', batch_size:20, l2_decay:0.001});\n\
 ";
 
-function reload() {
-  eval($("#layerdef").val());
+// ------------------------
+// BEGIN MNIST SPECIFIC STUFF
+// ------------------------
+classes_txt = ['0','1','2','3','4','5', '6'];
 
-  // enter buttons for layers
-  var t = '';
-  for(var i=1;i<net.layers.length-1;i++) { // ignore input and regression layers (first and last)
-    var butid = "button" + i;
-    t += "<input id=\""+butid+"\" value=\"" + net.layers[i].layer_type + "(" + net.layers[i].out_depth + ")" +"\" type=\"submit\" onclick=\"updateLix("+i+")\" style=\"width:80px; height: 30px; margin:5px;\";>";
-  }
-  $("#layer_ixes").html(t);
-  $("#button"+lix).css('background-color', '#FFA');
-  $("#cyclestatus").html('drawing neurons ' + d0 + ' and ' + d1 + ' of layer with index ' + lix + ' (' + net.layers[lix].layer_type + ')');
-}
-function updateLix(newlix) {
-  $("#button"+lix).css('background-color', ''); // erase highlight
-  lix = newlix;
-  d0 = 0;
-  d1 = 1; // reset these
-  $("#button"+lix).css('background-color', '#FFA');
+var image_width = 256;
+var image_height = 256;
 
-  $("#cyclestatus").html('drawing neurons ' + d0 + ' and ' + d1 + ' of layer with index ' + lix + ' (' + net.layers[lix].layer_type + ')');
-}
+var counter = 0;
 
+var data, labels;
+var tdata, tlabels;
 
-function myinit() { }
-
-function random_data(){
+function set_up_data() {
+  // ckp_scaled_features is an object of arrays of points
+  // ckp_test_scaled_features is an object of arrays of points
+  // ckp_labels is a array of labels
+  // ckp_test_labels is a array of labels
   data = [];
+  sizes = [];
+  mins = [];
   labels = [];
-  for(var k=0;k<40;k++) {
-    data.push([convnetjs.randf(-3,3), convnetjs.randf(-3,3)]); labels.push(convnetjs.randf(0,1) > 0.5 ? 1 : 0);
-  }
-  N = labels.length;
-}
+  for (var key in ckp_scaled_features) {
+    data.push(ckp_scaled_features[key]);
+    labels.push(ckp_labels[key]);
 
-function original_data(){
-
-  data = [];
-  labels = [];
-  data.push([-0.4326  ,  1.1909 ]); labels.push(1);
-  data.push([3.0, 4.0]); labels.push(1);
-  data.push([0.1253 , -0.0376   ]); labels.push(1);
-  data.push([0.2877 ,   0.3273  ]); labels.push(1);
-  data.push([-1.1465 ,   0.1746 ]); labels.push(1);
-  data.push([1.8133 ,   1.0139  ]); labels.push(0);
-  data.push([2.7258 ,   1.0668  ]); labels.push(0);
-  data.push([1.4117 ,   0.5593  ]); labels.push(0);
-  data.push([4.1832 ,   0.3044  ]); labels.push(0);
-  data.push([1.8636 ,   0.1677  ]); labels.push(0);
-  data.push([0.5 ,   3.2  ]); labels.push(1);
-  data.push([0.8 ,   3.2  ]); labels.push(1);
-  data.push([1.0 ,   -2.2  ]); labels.push(1);
-  N = labels.length;
-}
-
-function circle_data() {
-  data = [];
-  labels = [];
-  for(var i=0;i<50;i++) {
-    var r = convnetjs.randf(0.0, 2.0);
-    var t = convnetjs.randf(0.0, 2*Math.PI);
-    data.push([r*Math.sin(t), r*Math.cos(t)]);
-    labels.push(1);
-  }
-  for(var i=0;i<50;i++) {
-    var r = convnetjs.randf(3.0, 5.0);
-    //var t = convnetjs.randf(0.0, 2*Math.PI);
-    var t = 2*Math.PI*i/50.0
-    data.push([r*Math.sin(t), r*Math.cos(t)]);
-    labels.push(0);
-  }
-  N = data.length;
-}
-
-function spiral_data() {
-  data = [];
-  labels = [];
-  var n = 100;
-  for(var i=0;i<n;i++) {
-    var r = i/n*5 + convnetjs.randf(-0.1, 0.1);
-    var t = 1.25*i/n*2*Math.PI + convnetjs.randf(-0.1, 0.1);
-    data.push([r*Math.sin(t), r*Math.cos(t)]);
-    labels.push(1);
-  }
-  for(var i=0;i<n;i++) {
-    var r = i/n*5 + convnetjs.randf(-0.1, 0.1);
-    var t = 1.25*i/n*2*Math.PI + Math.PI + convnetjs.randf(-0.1, 0.1);
-    data.push([r*Math.sin(t), r*Math.cos(t)]);
-    labels.push(0);
-  }
-  N = data.length;
-}
-
-function update(){
-  // forward prop the data
-
-  var start = new Date().getTime();
-
-  var x = new convnetjs.Vol(1,1,2);
-  //x.w = data[ix];
-  var avloss = 0.0;
-  for(var iters=0;iters<20;iters++) {
-    for(var ix=0;ix<N;ix++) {
-      x.w = data[ix];
-      var stats = trainer.train(x, labels[ix]);
-      avloss += stats.loss;
+    width = [];
+    height = [];
+    for (var i = 0; i < ckp_scaled_features[key].length; i++) {
+      width.push(ckp_scaled_features[key][i][0]);
+      height.push(ckp_scaled_features[key][i][1]);
     }
+    min = [];
+    min[0] = Math.min.apply(Math, width);
+    min[1] = Math.min.apply(Math, height);
+    mins.push(min);
+    size = [];
+    size[0] = Math.max.apply(Math, width) - min[0];
+    size[1] = Math.max.apply(Math, height) - min[1];
+    sizes.push(size);
   }
-  avloss /= N*iters;
+  for (var key2 in jaffe_features) {
+    data.push(jaffe_features[key2]);
+    labels.push(jaffe_labels[key2]);
 
-  var end = new Date().getTime();
-  var time = end - start;
-
-  //console.log('loss = ' + avloss + ', 100 cycles through data in ' + time + 'ms');
-}
-
-function cycle() {
-  var selected_layer = net.layers[lix];
-  d0 += 1;
-  d1 += 1;
-  if(d1 >= selected_layer.out_depth) d1 = 0; // and wrap
-  if(d0 >= selected_layer.out_depth) d0 = 0; // and wrap
-  $("#cyclestatus").html('drawing neurons ' + d0 + ' and ' + d1 + ' of layer #' + lix + ' (' + net.layers[lix].layer_type + ')');
-}
-
-var lix = 4; // layer id to track first 2 neurons of
-var d0 = 0; // first dimension to show visualized
-var d1 = 1; // second dimension to show visualized
-function draw(){
-
-    ctx.clearRect(0,0,WIDTH,HEIGHT);
-
-    var netx = new convnetjs.Vol(1,1,2);
-    // draw decisions in the grid
-    var density= 5.0;
-    var gridstep = 2;
-    var gridx = [];
-    var gridy = [];
-    var gridl = [];
-    for(var x=0.0, cx=0; x<=WIDTH; x+= density, cx++) {
-      for(var y=0.0, cy=0; y<=HEIGHT; y+= density, cy++) {
-        //var dec= svm.marginOne([(x-WIDTH/2)/ss, (y-HEIGHT/2)/ss]);
-        netx.w[0] = (x-WIDTH/2)/ss;
-        netx.w[1] = (y-HEIGHT/2)/ss;
-        var a = net.forward(netx, false);
-
-        if(a.w[0] > a.w[1]) ctx.fillStyle = 'rgb(250, 150, 150)';
-        else ctx.fillStyle = 'rgb(150, 250, 150)';
-
-        //ctx.fillStyle = 'rgb(150,' + Math.floor(a.w[0]*105)+150 + ',150)';
-        //ctx.fillStyle = 'rgb(' + Math.floor(a.w[0]*255) + ',' + Math.floor(a.w[1]*255) + ', 0)';
-        ctx.fillRect(x-density/2-1, y-density/2-1, density+2, density+2);
-
-        if(cx%gridstep === 0 && cy%gridstep===0) {
-          // record the transformation information
-          var xt = net.layers[lix].out_act.w[d0]; // in screen coords
-          var yt = net.layers[lix].out_act.w[d1]; // in screen coords
-          gridx.push(xt);
-          gridy.push(yt);
-          gridl.push(a.w[0] > a.w[1]); // remember final label as well
-        }
-      }
+    width = [];
+    height = [];
+    for (var i = 0; i < jaffe_features[key2].length; i++) {
+      width.push(jaffe_features[key2][i][0]);
+      height.push(jaffe_features[key2][i][1]);
     }
-
-    // draw axes
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgb(50,50,50)';
-    ctx.lineWidth = 1;
-    ctx.moveTo(0, HEIGHT/2);
-    ctx.lineTo(WIDTH, HEIGHT/2);
-    ctx.moveTo(WIDTH/2, 0);
-    ctx.lineTo(WIDTH/2, HEIGHT);
-    ctx.stroke();
-
-    // draw representation transformation axes for two neurons at some layer
-    var mmx = cnnutil.maxmin(gridx);
-    var mmy = cnnutil.maxmin(gridy);
-    visctx.clearRect(0,0,visWIDTH,visHEIGHT);
-    visctx.strokeStyle = 'rgb(0, 0, 0)';
-    var n = Math.floor(Math.sqrt(gridx.length)); // size of grid. Should be fine?
-    var ng = gridx.length;
-    var c = 0; // counter
-    visctx.beginPath()
-    for(var x=0;x<n;x++) {
-      for(var y=0;y<n;y++) {
-
-        // down
-        var ix1 = x*n+y;
-        var ix2 = x*n+y+1;
-        if(ix1 >= 0 && ix2 >= 0 && ix1 < ng && ix2 < ng && y<n-1) { // check oob
-          var xraw = gridx[ix1];
-          xraw1 = visWIDTH*(gridx[ix1] - mmx.minv)/mmx.dv;
-          yraw1 = visHEIGHT*(gridy[ix1] - mmy.minv)/mmy.dv;
-          xraw2 = visWIDTH*(gridx[ix2] - mmx.minv)/mmx.dv;
-          yraw2 = visHEIGHT*(gridy[ix2] - mmy.minv)/mmy.dv;
-          visctx.moveTo(xraw1, yraw1);
-          visctx.lineTo(xraw2, yraw2);
-        }
-
-        // and draw its color
-        if(gridl[ix1]) visctx.fillStyle = 'rgb(250, 150, 150)';
-        else visctx.fillStyle = 'rgb(150, 250, 150)';
-        var sz = density * gridstep;
-        visctx.fillRect(xraw1-sz/2-1, yraw1-sz/2-1, sz+2, sz+2);
-
-        // right
-        var ix1 = (x+1)*n+y;
-        var ix2 = x*n+y;
-        if(ix1 >= 0 && ix2 >= 0 && ix1 < ng && ix2 < ng && x <n-1) { // check oob
-          var xraw = gridx[ix1];
-          xraw1 = visWIDTH*(gridx[ix1] - mmx.minv)/mmx.dv;
-          yraw1 = visHEIGHT*(gridy[ix1] - mmy.minv)/mmy.dv;
-          xraw2 = visWIDTH*(gridx[ix2] - mmx.minv)/mmx.dv;
-          yraw2 = visHEIGHT*(gridy[ix2] - mmy.minv)/mmy.dv;
-          visctx.moveTo(xraw1, yraw1);
-          visctx.lineTo(xraw2, yraw2);
-        }
-
-      }
-    }
-    visctx.stroke();
-
-    // draw datapoints.
-    ctx.strokeStyle = 'rgb(0,0,0)';
-    ctx.lineWidth = 1;
-    for(var i=0;i<N;i++) {
-
-      if(labels[i]==1) ctx.fillStyle = 'rgb(100,200,100)';
-      else ctx.fillStyle = 'rgb(200,100,100)';
-
-      drawCircle(data[i][0]*ss+WIDTH/2, data[i][1]*ss+HEIGHT/2, 5.0);
-
-      // also draw transformed data points while we're at it
-      netx.w[0] = data[i][0];
-      netx.w[1] = data[i][1]
-      var a = net.forward(netx, false);
-      var xt = visWIDTH * (net.layers[lix].out_act.w[d0] - mmx.minv) / mmx.dv; // in screen coords
-      var yt = visHEIGHT * (net.layers[lix].out_act.w[d1] - mmy.minv) / mmy.dv; // in screen coords
-      if(labels[i]==1) visctx.fillStyle = 'rgb(100,200,100)';
-      else visctx.fillStyle = 'rgb(200,100,100)';
-      visctx.beginPath();
-      visctx.arc(xt, yt, 5.0, 0, Math.PI*2, true);
-      visctx.closePath();
-      visctx.stroke();
-      visctx.fill();
-    }
-}
-
-function mouseClick(x, y, shiftPressed, ctrlPressed){
-
-  // x and y transformed to data space coordinates
-  var xt = (x-WIDTH/2)/ss;
-  var yt = (y-HEIGHT/2)/ss;
-
-  if(ctrlPressed) {
-    // remove closest data point
-    var mink = -1;
-    var mind = 99999;
-    for(var k=0, n=data.length;k<n;k++) {
-      var dx = data[k][0] - xt;
-      var dy = data[k][1] - yt;
-      var d = dx*dx+dy*dy;
-      if(d < mind || k==0) {
-        mind = d;
-        mink = k;
-      }
-    }
-    if(mink>=0) {
-      console.log('splicing ' + mink);
-      data.splice(mink, 1);
-      labels.splice(mink, 1);
-      N -= 1;
-    }
-
-  } else {
-    // add datapoint at location of click
-    data.push([xt, yt]);
-    labels.push(shiftPressed ? 1 : 0);
-    N += 1;
+    min = [];
+    min[0] = Math.min.apply(Math, width);
+    min[1] = Math.min.apply(Math, height);
+    mins.push(min);
+    size = [];
+    size[0] = Math.max.apply(Math, width) - min[0];
+    size[1] = Math.max.apply(Math, height) - min[1];
+    sizes.push(size);
   }
 
+  tdata = [];
+  tlabels = [];
+  tsizes = [];
+  tmins = [];
+  for (var key in ckp_test_scaled_features) {
+    tdata.push(ckp_test_scaled_features[key]);
+    tlabels.push(ckp_test_labels[key]);
+
+    width = [];
+    height = [];
+    for (var i = 0; i < ckp_test_scaled_features[key].length; i++) {
+      width.push(ckp_test_scaled_features[key][i][0]);
+      height.push(ckp_test_scaled_features[key][i][1]);
+    }
+    tmin = [];
+    tmin[0] = Math.min.apply(Math, width);
+    tmin[1] = Math.min.apply(Math, height);
+    tmins.push(tmin);
+    tsize = [];
+    tsize[0] = Math.max.apply(Math, width) - tmin[0];
+    tsize[1] = Math.max.apply(Math, height) - tmin[1];
+    tsizes.push(tsize);
+  }
+  for (var key2 in jaffe_test_features) {
+    tdata.push(jaffe_test_features[key2]);
+    tlabels.push(jaffe_test_labels[key2]);
+
+    width = [];
+    height = [];
+    for (var i = 0; i < jaffe_test_features[key2].length; i++) {
+      width.push(jaffe_test_features[key2][i][0]);
+      height.push(jaffe_test_features[key2][i][1]);
+    }
+    tmin = [];
+    tmin[0] = Math.min.apply(Math, width);
+    tmin[1] = Math.min.apply(Math, height);
+    tmins.push(tmin);
+    tsize = [];
+    tsize[0] = Math.max.apply(Math, width) - tmin[0];
+    tsize[1] = Math.max.apply(Math, height) - tmin[1];
+    tsizes.push(tsize);
+  }
+}
+set_up_data();
+
+var use_validation_data = true;
+var temp_arr;
+var sample_training_instance = function() {
+
+  // Randomly pick a image to train
+  var k = Math.floor(Math.random()*Object.keys(data).length)
+
+  var x = new convnetjs.Vol(2, 1, 71, 0.0);
+
+  for (var ix = 0; ix < 71; ix++) {
+    x.set(0, 0, ix, (data[k][ix][0] - mins[k][0]) / sizes[k][0]);
+    x.set(1, 0, ix, (data[k][ix][1] - mins[k][1]) / sizes[k][1]);
+  }
+
+  var isValidationData = use_validation_data && k%10===0 ? true : false;
+
+  if (counter < 1) {
+    console.log(mins[k]);
+    console.log(sizes[k]);
+    temp_arr = data[k];
+    temp_x = x;
+    console.log(data[k]);
+    console.log(x);
+    counter++;
+  }
+  return {x:x, label:labels[k], isValidationData:isValidationData};
 }
 
-function keyDown(key){
+// sample a random testing instance
+var sample_test_instance = function() {
+
+  // Randomly pick a image to train
+  var k = Math.floor(Math.random()*Object.keys(tdata).length)
+
+  var x = new convnetjs.Vol(2, 1, 71, 0.0);
+
+  for (var ix = 0; ix < 71; ix++) {
+    x.set(0, 0, ix, (tdata[k][ix][0] - tmins[k][0]) / tsizes[k][0]);
+    x.set(1, 0, ix, (tdata[k][ix][1] - tmins[k][1]) / tsizes[k][1]);
+  }
+
+  console.log("Testing on image " + k);
+
+  var isValidationData = use_validation_data && k%10===0 ? true : false;
+  return {x:x, label:tlabels[k], isValidationData:isValidationData};
 }
 
-function keyUp(key) {
-}
+// int main
+$(window).load(function() {
 
-$(function() {
-    // note, globals
-    viscanvas = document.getElementById('viscanvas');
-    visctx = viscanvas.getContext('2d');
-    visWIDTH = viscanvas.width;
-    visHEIGHT = viscanvas.height;
+  $("#newnet").val(t);
+  eval($("#newnet").val());
 
-    circle_data();
-    $("#layerdef").val(t);
-    reload();
-    NPGinit(20);
+  update_net_param_display();
 
+  start_fun();
 });
+
+var start_fun = function() {
+    setInterval(load_and_step, 0); // lets go!
+}
+
+// ------------------------
+// END MNIST SPECIFIC STUFF
+// ------------------------
+
+var maxmin = cnnutil.maxmin;
+var f2t = cnnutil.f2t;
+
+// elt is the element to add all the canvas activation drawings into
+// A is the Vol() to use
+// scale is a multiplier to make the visualizations larger. Make higher for larger pictures
+// if grads is true then gradients are used instead
+var draw_activations = function(elt, A, scale, grads) {
+
+  var s = scale || 2; // scale
+  var draw_grads = false;
+  if(typeof(grads) !== 'undefined') draw_grads = grads;
+
+  // get max and min activation to scale the maps automatically
+  var w = draw_grads ? A.dw : A.w;
+  var mm = maxmin(w);
+
+  // create the canvas elements, draw and add to DOM
+  for(var d=0;d<A.depth;d++) {
+
+    var canv = document.createElement('canvas');
+    canv.className = 'actmap';
+    var W = A.sx * s;
+    var H = A.sy * s;
+    canv.width = W;
+    canv.height = H;
+    var ctx = canv.getContext('2d');
+    var g = ctx.createImageData(W, H);
+
+    for(var x=0;x<A.sx;x++) {
+      for(var y=0;y<A.sy;y++) {
+        if(draw_grads) {
+          var dval = Math.floor((A.get_grad(x,y,d)-mm.minv)/mm.dv*255);
+        } else {
+          var dval = Math.floor((A.get(x,y,d)-mm.minv)/mm.dv*255);
+        }
+        for(var dx=0;dx<s;dx++) {
+          for(var dy=0;dy<s;dy++) {
+            var pp = ((W * (y*s+dy)) + (dx + x*s)) * 4;
+            for(var i=0;i<3;i++) { g.data[pp + i] = dval; } // rgb
+            g.data[pp+3] = 255; // alpha channel
+          }
+        }
+      }
+    }
+    ctx.putImageData(g, 0, 0);
+    elt.appendChild(canv);
+  }
+}
+
+var visualize_activations = function(net, elt) {
+
+  // clear the element
+  elt.innerHTML = "";
+
+  // show activations in each layer
+  var N = net.layers.length;
+  for(var i=0;i<N;i++) {
+    var L = net.layers[i];
+
+    var layer_div = document.createElement('div');
+
+    // visualize activations
+    var activations_div = document.createElement('div');
+    activations_div.appendChild(document.createTextNode('Activations:'));
+    activations_div.appendChild(document.createElement('br'));
+    activations_div.className = 'layer_act';
+    var scale = 2;
+    if(L.layer_type==='softmax' || L.layer_type==='fc') scale = 10; // for softmax
+    draw_activations(activations_div, L.out_act, scale);
+
+    // visualize data gradients
+    if(L.layer_type !== 'softmax') {
+      var grad_div = document.createElement('div');
+      grad_div.appendChild(document.createTextNode('Data Gradients:'));
+      grad_div.appendChild(document.createElement('br'));
+      grad_div.className = 'layer_grad';
+      var scale = 2;
+      if(L.layer_type==='softmax' || L.layer_type==='fc') scale = 10; // for softmax
+      draw_activations(grad_div, L.out_act, scale, true);
+      activations_div.appendChild(grad_div);
+    }
+
+    // visualize filters if they are of reasonable size
+    if(L.layer_type === 'conv') {
+      var filters_div = document.createElement('div');
+      if(L.filters[0].sx>3) {
+        // actual weights
+        filters_div.appendChild(document.createTextNode('Weights:'));
+        filters_div.appendChild(document.createElement('br'));
+        for(var j=0;j<L.filters.length;j++) {
+          filters_div.appendChild(document.createTextNode('('));
+          draw_activations(filters_div, L.filters[j], 2);
+          filters_div.appendChild(document.createTextNode(')'));
+        }
+        // gradients
+        filters_div.appendChild(document.createElement('br'));
+        filters_div.appendChild(document.createTextNode('Weight Gradients:'));
+        filters_div.appendChild(document.createElement('br'));
+        for(var j=0;j<L.filters.length;j++) {
+          filters_div.appendChild(document.createTextNode('('));
+          draw_activations(filters_div, L.filters[j], 2, true);
+          filters_div.appendChild(document.createTextNode(')'));
+        }
+      } else {
+        filters_div.appendChild(document.createTextNode('Weights hidden, too small'));
+      }
+      activations_div.appendChild(filters_div);
+    }
+    layer_div.appendChild(activations_div);
+
+    // print some stats on left of the layer
+    layer_div.className = 'layer ' + 'lt' + L.layer_type;
+    var title_div = document.createElement('div');
+    title_div.className = 'ltitle'
+    var t = L.layer_type + ' (' + L.out_sx + 'x' + L.out_sy + 'x' + L.out_depth + ')';
+    title_div.appendChild(document.createTextNode(t));
+    layer_div.appendChild(title_div);
+
+    if(L.layer_type==='conv') {
+      var t = 'filter size ' + L.filters[0].sx + 'x' + L.filters[0].sy + 'x' + L.filters[0].depth + ', stride ' + L.stride;
+      layer_div.appendChild(document.createTextNode(t));
+      layer_div.appendChild(document.createElement('br'));
+    }
+    if(L.layer_type==='pool') {
+      var t = 'pooling size ' + L.sx + 'x' + L.sy + ', stride ' + L.stride;
+      layer_div.appendChild(document.createTextNode(t));
+      layer_div.appendChild(document.createElement('br'));
+    }
+
+    // find min, max activations and display them
+    var mma = maxmin(L.out_act.w);
+    var t = 'max activation: ' + f2t(mma.maxv) + ', min: ' + f2t(mma.minv);
+    layer_div.appendChild(document.createTextNode(t));
+    layer_div.appendChild(document.createElement('br'));
+
+    var mma = maxmin(L.out_act.dw);
+    var t = 'max gradient: ' + f2t(mma.maxv) + ', min: ' + f2t(mma.minv);
+    layer_div.appendChild(document.createTextNode(t));
+    layer_div.appendChild(document.createElement('br'));
+
+    // number of parameters
+    if(L.layer_type==='conv') {
+      var tot_params = L.sx*L.sy*L.in_depth*L.filters.length + L.filters.length;
+      var t = 'parameters: ' + L.filters.length + 'x' + L.sx + 'x' + L.sy + 'x' + L.in_depth + '+' + L.filters.length + ' = ' + tot_params;
+      layer_div.appendChild(document.createTextNode(t));
+      layer_div.appendChild(document.createElement('br'));
+    }
+    if(L.layer_type==='fc') {
+      var tot_params = L.num_inputs*L.filters.length + L.filters.length;
+      var t = 'parameters: ' + L.filters.length + 'x' + L.num_inputs + '+' + L.filters.length + ' = ' + tot_params;
+      layer_div.appendChild(document.createTextNode(t));
+      layer_div.appendChild(document.createElement('br'));
+    }
+
+    // css madness needed here...
+    var clear = document.createElement('div');
+    clear.className = 'clear';
+    layer_div.appendChild(clear);
+
+    elt.appendChild(layer_div);
+  }
+}
+
+// loads a training image and trains on it with the network
+var paused = false;
+var load_and_step = function() {
+  if(paused) return;
+
+  var sample = sample_training_instance();
+  step(sample); // process this image
+}
+
+// evaluate current network on test set
+var test_predict = function() {
+  var num_classes = net.layers[net.layers.length-1].out_depth;
+
+  document.getElementById('testset_acc').innerHTML = '';
+  // grab a random test image
+  for(num=0;num<50;num++) {
+    var sample = sample_test_instance();
+    var y = sample.label;  // ground truth label
+
+    // forward prop it through the network
+    var aavg = new convnetjs.Vol(2,1,num_classes,0.0);
+    // ensures we always have a list, regardless if above returns single item or list
+    var xs = [].concat(sample.x);
+    var n = xs.length;
+    for(var i=0;i<n;i++) {
+      var a = net.forward(xs[i]);
+      aavg.addFrom(a);
+    }
+    var preds = [];
+    for(var k=0;k<aavg.w.length;k++) { preds.push({k:k,p:aavg.w[k]}); }
+    preds.sort(function(a,b){return a.p<b.p ? 1:-1;});
+
+    var div = document.createElement('div');
+    div.className = 'testdiv';
+
+    // draw the image into a canvas
+    draw_activations(div, xs[0], 2); // draw Vol into canv
+
+    // add predictions
+    var probsdiv = document.createElement('div');
+    div.className = 'probsdiv';
+    var t = '';
+    for(var k=0;k<3;k++) {
+      var col = preds[k].k===y ? 'rgb(85,187,85)' : 'rgb(187,85,85)';
+      t += '<div class=\"pp\" style=\"width:' + Math.floor(preds[k].p/n*100) + 'px; margin-left: 60px; background-color:' + col + ';\">' + classes_txt[preds[k].k] + '</div>'
+    }
+    probsdiv.innerHTML = t;
+    div.appendChild(probsdiv);
+
+    // add it into DOM
+    $("#testset_acc").append(div).fadeIn(1000);
+  }
+}
+
+
+var lossGraph = new cnnvis.Graph();
+var xLossWindow = new cnnutil.Window(100);
+var wLossWindow = new cnnutil.Window(100);
+var trainAccWindow = new cnnutil.Window(100);
+var valAccWindow = new cnnutil.Window(100);
+var step_num = 0;
+
+var step = function(sample) {
+
+  var x = sample.x;
+  var y = sample.label;
+
+  if(sample.isValidationData) {
+    // use x to build our estimate of validation error
+    net.forward(x);
+    var yhat = net.getPrediction();
+    var val_acc = yhat === y ? 1.0 : 0.0;
+    valAccWindow.add(val_acc);
+    return; // get out
+  }
+
+  // train on it with network
+  var stats = trainer.train(x, y);
+  var lossx = stats.cost_loss;
+  var lossw = stats.l2_decay_loss;
+
+  // keep track of stats such as the average training error and loss
+  var yhat = net.getPrediction();
+  var train_acc = yhat === y ? 1.0 : 0.0;
+  xLossWindow.add(lossx);
+  wLossWindow.add(lossw);
+  trainAccWindow.add(train_acc);
+
+  // visualize training status
+  var train_elt = document.getElementById("trainstats");
+  train_elt.innerHTML = '';
+  var t = 'Forward time per example: ' + stats.fwd_time + 'ms';
+  train_elt.appendChild(document.createTextNode(t));
+  train_elt.appendChild(document.createElement('br'));
+  var t = 'Backprop time per example: ' + stats.bwd_time + 'ms';
+  train_elt.appendChild(document.createTextNode(t));
+  train_elt.appendChild(document.createElement('br'));
+  var t = 'Classification loss: ' + f2t(xLossWindow.get_average());
+  train_elt.appendChild(document.createTextNode(t));
+  train_elt.appendChild(document.createElement('br'));
+  var t = 'L2 Weight decay loss: ' + f2t(wLossWindow.get_average());
+  train_elt.appendChild(document.createTextNode(t));
+  train_elt.appendChild(document.createElement('br'));
+  var t = 'Training accuracy: ' + f2t(trainAccWindow.get_average());
+  train_elt.appendChild(document.createTextNode(t));
+  train_elt.appendChild(document.createElement('br'));
+  var t = 'Validation accuracy: ' + f2t(valAccWindow.get_average());
+  train_elt.appendChild(document.createTextNode(t));
+  train_elt.appendChild(document.createElement('br'));
+  var t = 'Examples seen: ' + step_num;
+  train_elt.appendChild(document.createTextNode(t));
+  train_elt.appendChild(document.createElement('br'));
+
+  // visualize activations
+  if(step_num % 100 === 0) {
+    var vis_elt = document.getElementById("visnet");
+    visualize_activations(net, vis_elt);
+  }
+
+  // log progress to graph, (full loss)
+  if(step_num % 200 === 0) {
+    var xa = xLossWindow.get_average();
+    var xw = wLossWindow.get_average();
+    if(xa >= 0 && xw >= 0) { // if they are -1 it means not enough data was accumulated yet for estimates
+      lossGraph.add(step_num, xa + xw);
+      lossGraph.drawSelf(document.getElementById("lossgraph"));
+    }
+  }
+
+  // run prediction on test set
+  if(step_num % 1000 === 0) {
+    test_predict();
+  }
+  step_num++;
+}
+
+// user settings
+var change_lr = function() {
+  trainer.learning_rate = parseFloat(document.getElementById("lr_input").value);
+  update_net_param_display();
+}
+var change_momentum = function() {
+  trainer.momentum = parseFloat(document.getElementById("momentum_input").value);
+  update_net_param_display();
+}
+var change_batch_size = function() {
+  trainer.batch_size = parseFloat(document.getElementById("batch_size_input").value);
+  update_net_param_display();
+}
+var change_decay = function() {
+  trainer.l2_decay = parseFloat(document.getElementById("decay_input").value);
+  update_net_param_display();
+}
+var update_net_param_display = function() {
+  document.getElementById('lr_input').value = trainer.learning_rate;
+  document.getElementById('momentum_input').value = trainer.momentum;
+  document.getElementById('batch_size_input').value = trainer.batch_size;
+  document.getElementById('decay_input').value = trainer.l2_decay;
+}
+var toggle_pause = function() {
+  paused = !paused;
+  var btn = document.getElementById('buttontp');
+  if(paused) { btn.value = 'resume' }
+  else { btn.value = 'pause'; }
+}
+var dump_json = function() {
+  document.getElementById("dumpjson").value = JSON.stringify(net.toJSON());
+}
+var clear_graph = function() {
+  lossGraph = new cnnvis.Graph(); // reinit graph too
+}
+var reset_all = function() {
+  update_net_param_display();
+
+  // reinit windows that keep track of val/train accuracies
+  xLossWindow.reset();
+  wLossWindow.reset();
+  trainAccWindow.reset();
+  valAccWindow.reset();
+  lossGraph = new cnnvis.Graph(); // reinit graph too
+  step_num = 0;
+}
+var load_from_json = function() {
+  var jsonString = document.getElementById("dumpjson").value;
+  var json = JSON.parse(jsonString);
+  net = new convnetjs.Net();
+  net.fromJSON(json);
+  reset_all();
+}
+var change_net = function() {
+  eval($("#newnet").val());
+  reset_all();
+}
+
 </script>
-
-<style type="text/css">
-body {
-  font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-  color: #333;
-  padding: 20px;
-}
-canvas {
-    border: 1px solid #555;
-}
-#wrap {
-  width: 900px;
-  margin-right: auto;
-  margin-left: auto;
-  margin-bottom: 200px;
-}
-.pane {
-  width: 420px;
-  display: inline-block;
-  vertical-align: top;
-}
-input[type="submit"]
-{
-  margin: 3px;
-}
-
-</style>
-
 </head>
-
 <body>
+  <div id="wrap">
+  <h2 style="text-align: center;"><a href="http://cs.stanford.edu/people/karpathy/convnetjs/">ConvNetJS</a> MNIST demo</h2>
+  <h1>Description</h1>
+  <p>
+    This demo trains a Convolutional Neural Network on the <a href="http://yann.lecun.com/exdb/mnist/">MNIST digits dataset</a> in your browser, with nothing but Javascript. The dataset is fairly easy and one should expect to get somewhere around 99% accuracy within few minutes. I used <a href="mnist_parse.zip">this python script</a> to parse the <a href="http://deeplearning.net/tutorial/gettingstarted.html">original files</a> into batches of images that can be easily loaded into page DOM with img tags.
+  </p>
+  <p>
+    This network takes a 28x28 MNIST image and crops a random 24x24 window before training on it (this technique is called data augmentation and improves generalization). Similarly to do prediction, 4 random crops are sampled and the probabilities across all crops are averaged to produce final predictions. The network runs at about 5ms for both forward and backward pass on my reasonably decent Ubuntu+Chrome machine.
+  </p>
+  <p>
+    By default, in this demo we're using Adadelta which is one of per-parameter adaptive step size methods, so we don't have to worry about changing learning rates or momentum over time. However, I still included the text fields for changing these if you'd like to play around with SGD+Momentum trainer.
+  </p>
+  <p>Report questions/bugs/suggestions to <a href="https://twitter.com/karpathy">@karpathy</a>.</p>
+  <h1>Training Stats</h1>
+  <div class="divsec" style="270px;">
+    <div class="secpart">
+      <input id="buttontp" type="submit" value="pause" onclick="toggle_pause();" style="width: 100px; height:30px; background-color: #FCC;"/>
+      <div id="trainstats"></div>
 
-<div id="wrap">
-<h1><a href="http://cs.stanford.edu/people/karpathy/convnetjs">ConvnetJS</a> demo: toy 2d classification with 2-layer neural network</h1>
+      <div id="controls">
+        Learning rate: <input name="lri" type="text" maxlength="20" id="lr_input"/>
+        <input id="buttonlr" type="submit" value="change" onclick="change_lr();"/>
+        <br />
 
-<p>The simulation below shows a toy binary problem with a few data points of class 0 (red) and 1 (green). The network is set up as:</p>
+        Momentum: <input name="momi" type="text" maxlength="20" id="momentum_input"/>
+        <input id="buttonmom" type="submit" value="change" onclick="change_momentum();"/>
+        <br />
 
-<textarea id="layerdef" style="width:100%; height:200px;">
-</textarea>
-<br>
-<input id="buttontp" type="submit" value="change network" onclick="reload();" style="width: 300px; height: 50px;"/>
+        Batch size: <input name="bsi" type="text" maxlength="20" id="batch_size_input"/>
+        <input id="buttonbs" type="submit" value="change" onclick="change_batch_size();"/>
+        <br />
 
-<p>Feel free to change this, the text area above gets eval()'d when you hit the button and the network gets reloaded. Every 10th of a second, all points are fed to the network multiple times through the trainer class to train the network. The resulting predictions of the network are then "painted" under the data points to show you the generalization.</p>
+        Weight decay: <input name="wdi" type="text" maxlength="20" id="decay_input"/>
+        <input id="buttonwd" type="submit" value="change" onclick="change_decay();"/>
+      </div>
 
-<p>On the right we visualize the transformed representation of all grid points in the original space and the data, for a given layer and only for 2 neurons at a time. The number in the bracket shows the total number of neurons at that level of representation. If the number is more than 2, you will only see the two visualized but you can cycle through all of them with the cycle button.</p>
+      <input id="buttondj" type="submit" value="save network snapshot as JSON" onclick="dump_json();"/><br />
+      <input id="buttonlfj" type="submit" value="init network from JSON snapshot" onclick="load_from_json();"/><br />
+      <textarea id="dumpjson"></textarea>
+    </div>
+    <div class="secpart">
 
-<div class="panes">
-<div class="pane">
-<canvas id="NPGcanvas" width="400" height="400">Browser not supported for Canvas. Get a real browser.</canvas>
-<input id="buttondata1" type="submit" value="simple data" onclick="original_data();" style="width: 100px; height: 30px;"/>
-<input id="buttondata2" type="submit" value="circle data" onclick="circle_data();" style="width: 100px; height: 30px;"/>
-<input id="buttondata3" type="submit" value="spiral data" onclick="spiral_data();" style="width: 100px; height: 30px;"/><br>
-<input id="buttondata4" type="submit" value="random data" onclick="random_data();" style="width: 100px; height: 30px;"/><br>
-<p>
-Controls:<br>
-<b>CLICK</b>: Add red data point<br>
-<b>SHIFT+CLICK</b>: Add green data point<br>
-<b>CTRL+CLICK</b>: Remove closest data point<br>
-</p>
-</div>
+      <div>
+        Loss:<br />
+        <canvas id="lossgraph">
+        </canvas>
+        <br />
+        <input id="buttoncg" type="submit" value="clear graph" onclick="clear_graph();"/>
+      </div>
+    </div>
+    <div style="clear:both;"></div>
+  </div>
 
-<div class="pane">
-  <canvas id="viscanvas" width="400" height="400">Browser not supported for Canvas. Get a real browser.</canvas>
-  <div id="cyclestatus"></div>
-<div id="layer_ixes"></div>
-<input id="buttoncycle" type="submit" value="cycle through visualized neurons at selected layer (if more than 2)" onclick="cycle();" style="height: 40px;"/>
-</div>
+  <h1>Instantiate a Network and Trainer</h1>
+  <div>
+    <textarea id="newnet" style="width:100%; height:200px;"></textarea><br />
+    <input id="buttonnn" type="submit" value="change network" onclick="change_net();" style="width:200px;height:30px;"/>
+  </div>
 
-</div>
+  <div class="divsec">
+  <h1>Network Visualization</h1>
+    <div id="visnet"></div>
+  </div>
 
-<p>Go <a href="http://cs.stanford.edu/people/karpathy/convnetjs/">back to ConvNetJS</a></p>
+  <div class="divsec">
+  <h1>Example predictions on Test set</h1>
+    <div id="testset_acc"></div>
+  </div>
 
-</div>
-
+  </div>
 </body>
 </html>
+
+
+

@@ -103,6 +103,7 @@ body {
 <script src="convnetjs/build/convnet.js"></script>
 
 <script src="data/processed/jaffe_labels.js"></script>
+<script src="data/processed/jaffe_test_labels.js"></script>
 
 <script>
 
@@ -175,7 +176,7 @@ var sample_training_instance = function() {
   x = convnetjs.augment(x, 256, dx, dy, Math.random() < 0.5); //maybe flip horizontally
 
   var isval = use_validation_data && n%10===0 ? true : false;
-  return {x:x, label:labels[n], isval:isval};
+  return {x:x, label:jaffe_labels[n], isval:isval};
 }
 
 // sample a random testing instance
@@ -218,7 +219,7 @@ var sample_test_instance = function() {
 
   // return multiple augmentations, and we will average the network over them
   // to increase performance
-  return {x:xs, label:labels[n]};
+  return {x:xs, label:jaffe_test_labels[n - 142]};
 }
 
 var num_batches = 2; // 1 training batches, 1 test

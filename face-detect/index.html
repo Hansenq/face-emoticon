@@ -19,8 +19,18 @@
         </div>
     </div>
     <div id="footer"><div>Karen Ouyang, Hansen Qian, and Yicheng Sun<br/>Source code: <a href="https://github.com/Hansenq/face-emoticon" target="_blank">Github</a><br/><a href="http://princeton.edu/" target="_blank" onmouseover="this.style.color='orange';" onmouseout="this.style.color='';">Princeton University</a> | <a href="http://vision.princeton.edu/courses/COS429/2014fa/" target="_blank">COS 429 Fall 2014</a></div></div>
+
+
 <script type="text/javascript" src="ccv.js"></script>
 <script type="text/javascript" src="face.js"></script>
+
+<script src="convnetjs/demo/jquery-1.8.3.min.js"></script>
+<script src="convnetjs/build/vis.js"></script>
+<script src="convnetjs/build/util.js"></script>
+<script src="convnetjs/build/convnet.js"></script>
+
+<script type="text/javascript" src="/emotion_model_conv1.json"></script>
+
 <script type="text/javascript">
 agent = (function( ua ) {
 	ua = ua.toLowerCase();
@@ -135,6 +145,52 @@ function handleLocalFile(file) {
 		};
 		reader.readAsDataURL(file);
 	}
+}
+
+// Emotion Classification Neural Net
+
+var net;
+function start() {
+    var layer_defs_conv = [];
+    // Define layers here:
+    layer_defs_conv.push({type:'input', out_sx:2, out_sy:1, out_depth:71});
+    layer_defs_conv.push({type:'conv', sx:10, filters:8, stride:1, pad:2, activation:'relu'});
+    layer_defs_conv.push({type:'pool', sx:2, stride:2});
+    layer_defs_conv.push({type:'conv', sx:10, filters:16, stride:1, pad:2, activation:'relu'});
+    layer_defs_conv.push({type:'pool', sx:3, stride:3});
+    layer_defs_conv.push({type:'softmax', num_classes:6});
+    // Define layers above
+
+    var json = JSON.parse(json_string);
+    net = new convnetjs.Net();
+    net.fromJSON(json);
+}
+start();
+
+function classifyEmotionNN(features) {
+    width = [];
+    height = [];
+    for (var i = 0; i < features.length; i++) {
+      width.push(features[i][0]);
+      height.push(features[i][1]);
+    }
+    min = [];
+    min[0] = Math.min.apply(Math, width);
+    min[1] = Math.min.apply(Math, height);
+    size = [];
+    size[0] = Math.max.apply(Math, width) - min[0];
+    size[1] = Math.max.apply(Math, height) - min[1];
+
+    var vol = new convnetjs.Vol(2, 1, 71, 0.0);
+
+    for (var ix = 0; ix < 71; ix++) {
+        x.set(0, 0, ix, (features[ix][0] - min[0]) / size[0]);
+        x.set(1, 0, ix, (features[ix][1] - min[1]) / size[1]);
+    }
+
+    var output = net.forward(vol);
+    console.log(output);
+    return output;
 }
 
 document.getElementById("image-viewer").addEventListener("dragover", function (e) {
