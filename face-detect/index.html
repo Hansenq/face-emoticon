@@ -263,7 +263,6 @@
 
         var json = JSON.parse(json_string);
         net = new convnetjs.Net();
-        net.makeLayers(layer_defs_conv);
         net.fromJSON(json);
     }
     start();
@@ -292,7 +291,9 @@
         }
 
         var output = net.forward(features);
+        console.log(net.getPrediction());
         console.log(output.w);
+
         return output.w;
     }
     // classifyEmotionNN(test_feature);
