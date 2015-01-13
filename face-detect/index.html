@@ -133,37 +133,26 @@
                 document.getElementById("detection-time").innerHTML = Math.round((new Date()).getTime() - elapsed_time).toString();
     			document.getElementById("num-faces").innerHTML = comp.length.toString() + " face" + (comp.length == 1 ? "" : "s");
     			ctx.lineWidth = 2;
-    			ctx.strokeStyle = 'rgba(255,165,0,0.8)';
+    			ctx.strokeStyle = 'rgba(255,165,0,1)';
     			/* draw detected area */
     			for (var i = 0; i < comp.length; i++) {
-                    var canvas = document.createElement("canvas");
-                    canvas.width = 256;
-                    canvas.height = 256;
-                    canvas.getContext("2d").drawImage(image, comp[i].x, comp[i].y, comp[i].width, comp[i].height, 0, 0, 256, 256);
-                    var img = document.createElement("img");
-                    img.src = canvas.toDataURL("image/png");
-                    img.className = "thumbnail";
-                    img.width = 256;
-                    img.height = 256;
-                    
                     var div = document.createElement("div");
                     div.className = "thumb-container";
                     
                     var img_canvas = document.createElement("canvas");
                     img_canvas.id = "image" + i;
-                    img_canvas.width = img.width;
-                    img_canvas.height = img.height;
-                    img_canvas.getContext("2d").drawImage(img, 0, 0);
+                    img_canvas.width = 200;
+                    img_canvas.height = 200;
+                    img_canvas.getContext("2d").drawImage(image, comp[i].x, comp[i].y, comp[i].width, comp[i].height, 0, 0, 200, 200);
                     
                     var thumb_canvas = document.createElement("canvas");
                     thumb_canvas.id = "canvas" + i;
                     thumb_canvas.className = "thumb-canvas";
-                    thumb_canvas.width = img.width;
-                    thumb_canvas.height = img.height;
+                    thumb_canvas.width = 200;
+                    thumb_canvas.height = 200;
                     
                     div.appendChild(img_canvas);
                     div.appendChild(thumb_canvas);
-                    
                     results_viewer.appendChild(div);
 
                     ctx.beginPath();
@@ -223,9 +212,9 @@
 
         var drawRequest;
         function drawLoop() {
-        drawRequest = requestAnimationFrame(drawLoop);
-        cc.clearRect(0, 0, canvasInput.width, canvasInput.height);
-        ctracker.draw(canvasInput);
+            drawRequest = requestAnimationFrame(drawLoop);
+            cc.clearRect(0, 0, canvasInput.width, canvasInput.height);
+            ctracker.draw(canvasInput);
         }
         drawLoop();
 
