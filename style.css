@@ -71,6 +71,7 @@ a:hover {
     min-width: 700px;
 	max-width: 1000px;
     white-space: nowrap;
+    width: 100%;
     display: table;
 }
 
@@ -204,10 +205,18 @@ a:hover {
     white-space: normal;
 }
 
-.thumbnail {
+.thumb-container {
+    position: relative;
+    display: inline-block;
+}
+
+.thumb-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    
     border:1px solid black;
     margin-right: 4px;
-    display: inline-block;
 }
 
 #footer {
