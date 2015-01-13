@@ -8,7 +8,7 @@ function getAllPositions(length) {
   var all_positions = [];
 
   for (i = 0; i < length; i++) {
-    all_position[i] = drawFeature(i);
+    all_positions[i] = drawFeature(i);
   }
   return all_positions;
 }
@@ -22,7 +22,13 @@ function drawFeatures(i) {
   ctracker.init(pModel);
   ctracker.start(document.getElementById('image' + i));
 
-  drawLoop(cc, ctracker);
+  var drawRequest;
+  function drawLoop() {
+    drawRequest = requestAnimationFrame(drawLoop);
+    cc.clearRect(0, 0, canvasInput.width, canvasInput.height);
+    ctracker.draw(canvasInput);
+  }
+  drawLoop();
 
   document.addEventListener("clmtrackrConverged", function(event) {
     document.getElementById('convergence').innerHTML = "CONVERGED";
@@ -31,8 +37,3 @@ function drawFeatures(i) {
   }, false);
 }
 
-function drawLoop(canvas, ctracker) {
-  requestAnimationFrame(drawLoop);
-  canvas.clearRect(0, 0, canvas.width, canvas.height);
-  ctracker.draw(canvas);
-}
