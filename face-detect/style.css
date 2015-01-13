@@ -71,6 +71,7 @@ a:hover {
     min-width: 700px;
 	max-width: 1000px;
     white-space: nowrap;
+    width: 100%;
     display: table;
 }
 
@@ -89,6 +90,7 @@ a:hover {
 #content #input #urlbox {
     display: table;
     width: 100%;
+    visibility: hidden;
 }
 
 #content #input #urlbox #urlbox-row {

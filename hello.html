@@ -24,12 +24,43 @@ function periodic() {
   d.innerHTML = 'Random number: ' + Math.random()
 }
 
-
+var data, labels
 
 function jaffe_data() {
+  // ckp_scaled_features is an object of arrays of points
+  // ckp_test_scaled_features is an object of arrays of points
   // ckp_labels is a array of labels
   // ckp_test_labels is a array of labels
+  data = [];
+  labes = [];
 
+  for (var key in ckp_scaled_features) {
+    data.push(data[key]);
+    labels.push(ckp_labels[key]);
+  }
+}
+
+function update(){
+  // forward prop the data
+
+  var start = new Date().getTime();
+
+  var x = new convnetjs.Vol(2,1,71);
+  //x.w = data[ix];
+  var avloss = 0.0;
+  for(var iters=0;iters<20;iters++) {
+    for(var ix=0;ix<N;ix++) {
+      x.w = data[ix];
+      var stats = trainer.train(x, labels[ix]);
+      avloss += stats.loss;
+    }
+  }
+  avloss /= N*iters;
+
+  var end = new Date().getTime();
+  var time = end - start;
+
+  //console.log('loss = ' + avloss + ', 100 cycles through data in ' + time + 'ms');
 }
 
 var net; // declared outside -> global variable in window scope
@@ -37,7 +68,7 @@ function start() {
   // this gets executed on startup
   var layer_defs = [];
   // input layer of size 1x1x71 (all volumes are 3D)
-  layer_defs.push({type:'input', out_sx:1, out_sy:2, out_depth:71});
+  layer_defs.push({type:'input', out_sx:2, out_sy:1, out_depth:71});
   // some fully connected layers
   layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
   layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
