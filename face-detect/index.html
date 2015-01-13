@@ -53,6 +53,15 @@
 <script src="../convnetjs/build/util.js"></script>
 <script src="../convnetjs/build/convnet.js"></script>
 
+<script src="../data/processed/ckp_scaled_features.js"></script>
+<script src="../data/processed/ckp_test_scaled_features.js"></script>
+<script src="../data/processed/ck+_labels.js"></script>
+<script src="../data/processed/ck+_test_labels.js"></script>
+<script src="../data/processed/jaffe_features.js"></script>
+<script src="../data/processed/jaffe_test_features.js"></script>
+<script src="../data/processed/jaffe_labels.js"></script>
+<script src="../data/processed/jaffe_test_labels.js"></script>
+
 <!-- feature detection libraries -->
 <script src="../clmtrackr/js/utils.js"></script>
 <script src="../clmtrackr/js/clmtrackr.js"></script>
@@ -249,7 +258,7 @@
         6: 'Neutral',
     };
 
-    var net;
+    var net, trainer;
     function start() {
         var layer_defs_conv = [];
         // Define layers here:
@@ -264,6 +273,8 @@
         var json = JSON.parse(json_string);
         net = new convnetjs.Net();
         net.fromJSON(json);
+        // net.makeLayers(layer_defs_conv);
+        trainer = new convnetjs.SGDTrainer(net, {method:'adadelta', batch_size:20, l2_decay:0.001});
     }
     start();
 
@@ -283,13 +294,14 @@
         size[1] = Math.max.apply(Math, height) - min[1];
 
         var vol = new convnetjs.Vol(2, 1, 71, 0.0);
-        console.log(vol);
 
         for (var ix = 0; ix < 71; ix++) {
             vol.set(0, 0, ix, (features[ix][0] - min[0]) / size[0]);
             vol.set(1, 0, ix, (features[ix][1] - min[1]) / size[1]);
         }
+        console.log(vol);
 
+        console.log(features);
         var output = net.forward(features);
         console.log(net.getPrediction());
         console.log(output.w);
@@ -297,6 +309,179 @@
         return output.w;
     }
     // classifyEmotionNN(test_feature);
+
+
+
+
+
+    // The training code below doesn't solve the problem :(
+
+    // // BEGIN TRAINING STUFF
+    // classes_txt = ['0','1','2','3','4','5', '6'];
+
+    // var image_width = 256;
+    // var image_height = 256;
+
+    // var counter = 0;
+
+    // var data, labels;
+    // var tdata, tlabels;
+
+    // function set_up_data() {
+    //   // ckp_scaled_features is an object of arrays of points
+    //   // ckp_test_scaled_features is an object of arrays of points
+    //   // ckp_labels is a array of labels
+    //   // ckp_test_labels is a array of labels
+    //   data = [];
+    //   sizes = [];
+    //   mins = [];
+    //   labels = [];
+    //   for (var key in ckp_scaled_features) {
+    //     data.push(ckp_scaled_features[key]);
+    //     labels.push(ckp_labels[key]);
+
+    //     width = [];
+    //     height = [];
+    //     for (var i = 0; i < ckp_scaled_features[key].length; i++) {
+    //       width.push(ckp_scaled_features[key][i][0]);
+    //       height.push(ckp_scaled_features[key][i][1]);
+    //     }
+    //     min = [];
+    //     min[0] = Math.min.apply(Math, width);
+    //     min[1] = Math.min.apply(Math, height);
+    //     mins.push(min);
+    //     size = [];
+    //     size[0] = Math.max.apply(Math, width) - min[0];
+    //     size[1] = Math.max.apply(Math, height) - min[1];
+    //     sizes.push(size);
+    //   }
+    //   // for (var key2 in jaffe_features) {
+    //   //   data.push(jaffe_features[key2]);
+    //   //   labels.push(jaffe_labels[key2]);
+
+    //   //   width = [];
+    //   //   height = [];
+    //   //   for (var i = 0; i < jaffe_features[key2].length; i++) {
+    //   //     width.push(jaffe_features[key2][i][0]);
+    //   //     height.push(jaffe_features[key2][i][1]);
+    //   //   }
+    //   //   min = [];
+    //   //   min[0] = Math.min.apply(Math, width);
+    //   //   min[1] = Math.min.apply(Math, height);
+    //   //   mins.push(min);
+    //   //   size = [];
+    //   //   size[0] = Math.max.apply(Math, width) - min[0];
+    //   //   size[1] = Math.max.apply(Math, height) - min[1];
+    //   //   sizes.push(size);
+    //   // }
+
+    //   tdata = [];
+    //   tlabels = [];
+    //   tsizes = [];
+    //   tmins = [];
+    //   for (var key in ckp_test_scaled_features) {
+    //     tdata.push(ckp_test_scaled_features[key]);
+    //     tlabels.push(ckp_test_labels[key]);
+
+    //     width = [];
+    //     height = [];
+    //     for (var i = 0; i < ckp_test_scaled_features[key].length; i++) {
+    //       width.push(ckp_test_scaled_features[key][i][0]);
+    //       height.push(ckp_test_scaled_features[key][i][1]);
+    //     }
+    //     tmin = [];
+    //     tmin[0] = Math.min.apply(Math, width);
+    //     tmin[1] = Math.min.apply(Math, height);
+    //     tmins.push(tmin);
+    //     tsize = [];
+    //     tsize[0] = Math.max.apply(Math, width) - tmin[0];
+    //     tsize[1] = Math.max.apply(Math, height) - tmin[1];
+    //     tsizes.push(tsize);
+    //   }
+    //   // for (var key2 in jaffe_test_features) {
+    //   //   tdata.push(jaffe_test_features[key2]);
+    //   //   tlabels.push(jaffe_test_labels[key2]);
+
+    //   //   width = [];
+    //   //   height = [];
+    //   //   for (var i = 0; i < jaffe_test_features[key2].length; i++) {
+    //   //     width.push(jaffe_test_features[key2][i][0]);
+    //   //     height.push(jaffe_test_features[key2][i][1]);
+    //   //   }
+    //   //   tmin = [];
+    //   //   tmin[0] = Math.min.apply(Math, width);
+    //   //   tmin[1] = Math.min.apply(Math, height);
+    //   //   tmins.push(tmin);
+    //   //   tsize = [];
+    //   //   tsize[0] = Math.max.apply(Math, width) - tmin[0];
+    //   //   tsize[1] = Math.max.apply(Math, height) - tmin[1];
+    //   //   tsizes.push(tsize);
+    //   // }
+    // }
+    // set_up_data();
+    // var temp_arr;
+    // var sample_training_instance = function() {
+
+    //   // Randomly pick a image to train
+    //   var k = Math.floor(Math.random()*Object.keys(data).length)
+
+    //   var x = new convnetjs.Vol(2, 1, 71, 0.0);
+
+    //   for (var ix = 0; ix < 71; ix++) {
+    //     x.set(0, 0, ix, (data[k][ix][0] - mins[k][0]) / sizes[k][0]);
+    //     x.set(1, 0, ix, (data[k][ix][1] - mins[k][1]) / sizes[k][1]);
+    //   }
+    //   return {x:x, label:labels[k], isValidationData:false};
+    // }
+
+    // var load_and_step = function() {
+    //   if(paused) return;
+
+    //   var sample = sample_training_instance();
+    //   step(sample); // process this image
+    // }
+
+    // var start_fun = function() {
+    //     setInterval(load_and_step, 0); // lets go!
+    // }
+    // start_fun();
+
+    // // loads a training image and trains on it with the network
+    // var paused = false;
+
+
+    // var step_num = 0;
+
+    // var step = function(sample) {
+
+    //   var x = sample.x;
+    //   var y = sample.label;
+
+    //   // train on it with network
+    //   var stats = trainer.train(x, y);
+    //   var lossx = stats.cost_loss;
+    //   var lossw = stats.l2_decay_loss;
+    //   console.log("Step num: " + step_num);
+    //   step_num++;
+    // }
+    // var pause = function() {
+    //   paused = true;
+    // }
+    // setTimeout(pause, 20000);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     document.getElementById("image-viewer").addEventListener("dragover", function (e) {
     	e.stopPropagation();
