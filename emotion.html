@@ -177,25 +177,25 @@ function set_up_data() {
     size[1] = Math.max.apply(Math, height) - min[1];
     sizes.push(size);
   }
-  for (var key2 in jaffe_features) {
-    data.push(jaffe_features[key2]);
-    labels.push(jaffe_labels[key2]);
+  // for (var key2 in jaffe_features) {
+  //   data.push(jaffe_features[key2]);
+  //   labels.push(jaffe_labels[key2]);
 
-    width = [];
-    height = [];
-    for (var i = 0; i < jaffe_features[key2].length; i++) {
-      width.push(jaffe_features[key2][i][0]);
-      height.push(jaffe_features[key2][i][1]);
-    }
-    min = [];
-    min[0] = Math.min.apply(Math, width);
-    min[1] = Math.min.apply(Math, height);
-    mins.push(min);
-    size = [];
-    size[0] = Math.max.apply(Math, width) - min[0];
-    size[1] = Math.max.apply(Math, height) - min[1];
-    sizes.push(size);
-  }
+  //   width = [];
+  //   height = [];
+  //   for (var i = 0; i < jaffe_features[key2].length; i++) {
+  //     width.push(jaffe_features[key2][i][0]);
+  //     height.push(jaffe_features[key2][i][1]);
+  //   }
+  //   min = [];
+  //   min[0] = Math.min.apply(Math, width);
+  //   min[1] = Math.min.apply(Math, height);
+  //   mins.push(min);
+  //   size = [];
+  //   size[0] = Math.max.apply(Math, width) - min[0];
+  //   size[1] = Math.max.apply(Math, height) - min[1];
+  //   sizes.push(size);
+  // }
 
   tdata = [];
   tlabels = [];
@@ -220,25 +220,25 @@ function set_up_data() {
     tsize[1] = Math.max.apply(Math, height) - tmin[1];
     tsizes.push(tsize);
   }
-  for (var key2 in jaffe_test_features) {
-    tdata.push(jaffe_test_features[key2]);
-    tlabels.push(jaffe_test_labels[key2]);
+  // for (var key2 in jaffe_test_features) {
+  //   tdata.push(jaffe_test_features[key2]);
+  //   tlabels.push(jaffe_test_labels[key2]);
 
-    width = [];
-    height = [];
-    for (var i = 0; i < jaffe_test_features[key2].length; i++) {
-      width.push(jaffe_test_features[key2][i][0]);
-      height.push(jaffe_test_features[key2][i][1]);
-    }
-    tmin = [];
-    tmin[0] = Math.min.apply(Math, width);
-    tmin[1] = Math.min.apply(Math, height);
-    tmins.push(tmin);
-    tsize = [];
-    tsize[0] = Math.max.apply(Math, width) - tmin[0];
-    tsize[1] = Math.max.apply(Math, height) - tmin[1];
-    tsizes.push(tsize);
-  }
+  //   width = [];
+  //   height = [];
+  //   for (var i = 0; i < jaffe_test_features[key2].length; i++) {
+  //     width.push(jaffe_test_features[key2][i][0]);
+  //     height.push(jaffe_test_features[key2][i][1]);
+  //   }
+  //   tmin = [];
+  //   tmin[0] = Math.min.apply(Math, width);
+  //   tmin[1] = Math.min.apply(Math, height);
+  //   tmins.push(tmin);
+  //   tsize = [];
+  //   tsize[0] = Math.max.apply(Math, width) - tmin[0];
+  //   tsize[1] = Math.max.apply(Math, height) - tmin[1];
+  //   tsizes.push(tsize);
+  // }
 }
 set_up_data();
 
