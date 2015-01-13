@@ -1,0 +1,186 @@
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+\usepackage{cvpr}
+\usepackage{times}
+\usepackage{epsfig}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% Include other packages here, before hyperref.
+
+% If you comment hyperref and then uncomment it, you should delete
+% egpaper.aux before re-running latex.  (Or just hit 'q' on the first latex
+% run, let it finish, and you should be clear).
+\usepackage[breaklinks=true,bookmarks=false]{hyperref}
+
+\cvprfinalcopy % *** Uncomment this line for the final submission
+
+\def\cvprPaperID{****} % *** Enter the CVPR Paper ID here
+\def\httilde{\mbox{\tt\raisebox{-.5ex}{\symbol{126}}}}
+
+% Pages are numbered in submission mode, and unnumbered in camera-ready
+%\ifcvprfinal\pagestyle{empty}\fi
+\setcounter{page}{1}
+\begin{document}
+
+%%%%%%%%% TITLE
+\title{COS 429 Project: Browser Implementation of Face to Emoji using Convolutional Neural Networks for Emotion Classification}
+
+\author{Karen Ouyang\\
+Princeton University\\
+{\tt\small kouyang@princeton.edu}
+\and
+Hansen Qian\\
+Princeton University\\
+{\tt\small hq@princeton.edu}
+\and
+Yicheng Sun\\
+Princeton University\\
+{\tt\small yichengs@princeton.edu}
+}
+
+\maketitle
+%\thispagestyle{empty}
+
+%%%%%%%%% ABSTRACT
+\begin{abstract}
+   Recently, emojis (small, rendered imitations of facial expressions generally used for instant messaging), have become a popular form of communication between users. These characters imitate humans' faces and add emotion to text; however, choosing the correct icon can be difficult.  We attempt to create a system by which images of people's faces can be automatically mapped to a specific emoji icon. There are a few main steps in our process: face detection, face fitting, and emotion classification. Face detection is detected using eigenfaces; face fitting is conducted by fitting a mask onto potential faces in an image, and emotion detection is conducted using a Convolutional Neural Network. We hope to implement this system in a publicly-available web application running on the client's computer.
+\end{abstract}
+
+%%%%%%%%% BODY TEXT
+\section{Introduction}
+
+Facial expression plays a great role in human communication for evaluating social cues. We wish to develop a realtime mood detection system based on input video of a subject's face, and evaluate with some percent certainty the emotions in his or her face. As communication becomes increasingly digital, such a tool would enable us to, for example, send automated emojis. It can also be used in robot-human interactions or for evaluating audience reaction to entertainment. Numerous other applications exist as well.
+
+%-------------------------------------------------------------------------
+\section{Existing Research}
+
+Previous research has been conducted on the major portions of the task, mainly face detection, facial feature detection, emotion classification using neural networks, and neural networks that run on the browser. However, we attempt to tie all of these together in a usable and functional interface running on a client machine. 
+
+
+\subsection{Face Detection}
+Currently, there are several methods to face detection which can be broadly described as the following: knowledge-based, template-matching, feature invariant, and appearance-based. [1]
+
+Knowledge-based methods are based on known facial geometry. For example, an algorithm for eye detection will perform eye edge contour tracing based on prior knowledge [2]. Other facial features, such as face shape [3], are usable as well. Challenges in this approach mostly involve translating the facial geometry rules into effective rules. Furthermore, knowledge-based methods are not as scalable as other approaches because they require building a prior knowledge set.
+
+Template-matching methods involve matching a standard face pattern in the input image. This may be accomplished by using histogram of oriented gradients (HOG) as described in class [4]. Though this sliding-window approach is fairly simple and provides high accuracy, it has the drawback of requiring image scaling.
+
+Feature invariant methods perform facial feature detection, such as of skin color/texture, eyes, nose, or mouth. This is accomplished through statistical models learned from a training database [5]. Feature invariant approaches, however, are not suitable for inputs with noise, as they may disrupt or weaken the conditions. Like with HOG, the main drawback of this approach is with scaling. It is also weak to rotation, should these images not be in the training dataset.
+
+Appearance-based methods are more varied. Existing approaches include, but are not limited to: direct correlation, accomplished comparing of pixel intensities values from facial images [6]; eigenfaces, by taking covariance matrices of facial images and producing a face-key image vector; support vector machines [7]; and neural-network training.
+
+
+\subsection{Emotion Classification}
+
+The extracted facial features are used as input to a classification system that selects a predefined emotion category. The problem of emotion classification has been solved many times in the past, most of which differ in the features that are selected and the classification method used. Many different techniques have been used: Dumas (2001) showed that the use of Support Vector Machines (SVM) achieves equivalent performance to neural networks, with a mean accuracy of 88.9\% [8]. Sebe, Sun, Bakker et al. (2004) compared the performance of Bayesian Networks, Decision Trees, SVMs, and k-Nearest Neighbor algorithms for this task [9]. However, they concluded that ``facial expression recognition is not a simple classification problem and all of the models tried were not able to entirely capture the complex decision boundary that separates the different expressions.'' Their experiments showed that k-Nearest Neighbor performed the best, but was computationally slow and required large amounts of memory. 
+
+In contrast, Garcia and Delakis (2004) used Convolutional Neural Networks to considerable success [\ref{ref:Garcia,Delakis}]. Convolutional Neural Networks (CNN) are a special type of multi-layer neural networks that use a sequence of alternating convolutional layers and sub-sampling layers. Garcia and Delakis write, ``Experiments have shown high detection rates with a particularly low number of false alarms, on difficult test sets, without requiring the use of multiple networks for handling difficult cases.'' The authors recommend no local preprocessing on each image. Based off of this research, and Yann LeCun's presentation on ``The Unreasonable Effectiveness of Deep Learning,'' [10] we attempt to use a CNN for our task.  
+
+Previous work has been done on a browser implementation of a CNN. Andrej Karpathy has built ConvNetJS, a Javascript tool that allows training of a CNN in a client's computer [11]. His work fits well into our needs, and we use his library as an implementation of a CNN.
+
+\section{Methodology}
+
+We have broken up our approach into three primary parts: face detection, face fitting, and emotion detection. We will describe each of these parts in further detail.
+
+\subsection{Face Detection}
+
+The method of eigenfaces to detect faces holds multiple advantages over other facial detection algorithms, primarily in its speed and efficiency. This is good for real-time data as from an input video.
+
+We will implement the eigenface method for our project, based on a paper by Turk and Pentland [12]. We begin by computing the eigenfaces, which is a set of eigenvectors later used to detect faces in the input. We begin by obtaining a set of training facial images. After representing each image as a vector, we can compute the average face vector. From here, we compute a covariance matrix. Using this covariance matrix, the average face vector, and the face vectors, we compute a set of eigenvectors, from which we keep the ``best'' ones in the eigenface. Face images are projected onto a face space that encodes the variation among the images.
+
+To recognize whether the subject in an input image that is in the same orientation as the training faces, we normalize this input image with the average face vector. This is then projected onto the eigenspace and we compute the distance with this face space. This distance can be the Euclidian distance, though other distance calculations may be used as well.
+
+We use the face space to detect faces in a given input image. First, we project the image onto the face space. Then, at every location in the image, calculate the distance between the local subimage--the image around this location--and the face space. This distance is used as the score to determine whether there is a face in this subimage. Once this face is detected, we can move on to evaluating the facial features.
+
+\subsection{Face Fitting}
+
+The main features of the face, such as eyebrows, eyes, nose, mouth, and jawline, can be represented by a facial model consisting of numerous small classifiers. Because the face is relatively stable, persistent, and consistent from person to person, the input face can be fitted to a model that is approximatively representative of the whole population. Given the initial positions from the approximate model, the classifiers will locally search the surrounding points to find the optimal fit. 
+
+Creating the approximate model requires averaging the facial features of many pictures. Using the MUCT database (a database of 3755 faces with 76 annotated facial features), the average of the locations of all the annotated features can be found. Through principle component analysis, variations in defined parameters such as yaw, pitch, mouth openness, smile intensity, etc can be extracted. Thus any possible pose can be modelled by a linear combination of vectors of the mean points and the weighted combination of parameters.
+
+Each point on the model is a classifier, and in our case a logistic regression classifier with an SVM kernel. The classifier is trained by inputting multiple cropped images from the MUCT database of the target point (e.g. pupil) and its surrounding areas. After face detection is complete, and the approximate model overlaid over the face, each classifier aligns to the optimal feature point within a set bounding box [13].
+
+\begin{figure}[t]
+\begin{center}
+   \includegraphics[width=0.8\linewidth]{facial_model.PNG}
+\end{center}
+   \caption{The base facial model with 70 classifiers. [14]}
+\label{fig:long}
+\label{fig:onecol}
+\end{figure}
+
+\begin{figure}[t]
+\begin{center}
+   \includegraphics[width=0.8\linewidth]{fitted_model.PNG}
+\end{center}
+   \caption{Fitted facial model. [14]}
+\label{fig:long}
+\label{fig:onecol}
+\end{figure}
+
+Face fitting will be implemented using clmtrackr [15], which is a javascript library for fitting facial models to faces in videos or images.
+
+\subsection{Emotion Detection}
+
+To build a dataset for the emotion classification, face fitting will be conducted on images from the Cohn-Kanade AU-Coded Expression Database [16] and the JAFFE database [17], both of which incorporates emotion metadata on 486 facial images. The six basic emotions of interest are anger, disgust, fear, happiness, and surprise, based off of Paul Eckman's work on facial expressions [18]. 
+
+The subsequent extract features and corresponding emotional metadata will be inputs to train a neural network that will be used to detect emotions in new input faces. The neural network will classify new input image into one of the six basic emotions. 
+
+For our purposes, we will use a Convolutional Neural Network, specifically the version originally introduced by Yann LeCun using the backpropagation learning algorithm [19]. We use Andrej Karpathy's implementation of a CNN in the browser, ConvNetJS. Our procedure for this experiment is to first create a working basic classifier for the six basic emotions as described above, then expand our system to cover more unique facial expressions. 
+
+Our CNN will be trained using the backpropagation algorithm [20]; thus, weights for each layer do not need to be adjusted globally. Rather, we can minimize a global error function and propagate the weights back to each layer. We simply use the data sets above for training, and let the CNN adjust the weight of each layer as necessary. The neural network will then output a percentage score for each emotion.
+
+On our web application, we will each specific emoji to a set of percentage scores for each emotion. The resulting output from our CNN will then be used to determine which emoji most closely matches the input image. That emoji will then be displayed to the user.
+
+\section{Evaluation Metrics}
+
+A minimal viable product will be an web application where the user inputs an image of their face. The face detection, model fitting, and emotion detection code will be run and the user will be returned an emoji that corresponds with their primary basic emotion shown. We aim for a accuracy of 70\% as previous research has shown that a neural network can be trained to recognize the emotion of a Cohn-Kanade image at a accuracy of 77\%.
+
+Assuming the minimal viable product is a success, work will be done to allow real-time emotion detection with a video input. Additionally, more emojis will be added to allow outputs representing a mix of the basic emotions. Work will also be done to port the web application onto the Android development platform.
+
+\section{References}
+
+\begin{quote}
+[1] Widanagamaachchi, Wathsala Nayomi. ``Facial Emotion Recognition with a Neural Network Approach.'' http://www.cs.utah.edu/~widanaga/papers/ \\ Widanagamaachchi.2009.thesis.pdf
+
+[2] Zhang, Liming. ``Knowledge-based eye detection for human face recognition.'' http://ieeexplore.ieee.org/xpls/ \\ abs\_all.jsp?arnumber=885772\&tag=1
+
+[3] Wang, Jianguo and Tieniu Tan. ``A new face detection method based on shape information.'' http://visgraph.cs.ust.hk/biometrics/Papers/Face/ \\ prl2000-06-01.pdf
+
+[4] Xiao, Jianxiong. ``What is a chair?'' http://vision.princeton.edu/courses/COS429/ \\ 2014fa/slides/12\_object/ \\ COS429\_ObjectRecognition.pdf
+
+[5] Hotta, Kazuhiro, Takio Kurita, and Taketoshi Mishima. ``Scale Invariant Face Detection Method using Higher-Order Local Autocorrelation Features extracted from Log-Polar Image.'' http://ieeexplore.ieee.org/stamp/ \\ stamp.jsp?arnumber=670927
+
+[6] Heseltine, Thomas, Nick Pears, Jim Austin, and Zezhi Chen. ``Face Recognition: A Comparison of Appearance-Based Approaches.'' http://www.cs.york.ac.uk/arch/publications/ \\ byyear/2003/face-recognition-a-comparison-of-appearance-based-approaches.pdf
+
+[7] Heisele, Bernd, Purdy Ho, and Tomaso Poggio. ``Face Recognition with Support Vector Machines: Global versus Component-based Approach.'' http://cbcl.mit.edu/publications/ps/iccv2001.pdf
+
+[8] Dumas, Melanie. ``Emotional Expression Recognition using Support Vector Machines.'' http://cseweb.ucsd.edu/~elkan/254spring01/ \\ mdumasrep.pdf
+
+[9] Sebe, Nicu et al. ``Towards Authentic Emotion Recognition.'' http://ieeexplore.ieee.org/stamp/ \\ stamp.jsp?arnumber=1398369
+
+[10] Garcia, Christophe and Manolis Delakis. ``Convolutional Face Finder: A Neural Architecture for Fast and Robust Face Detection.'' http://ieeexplore.ieee.org/stamp/ \\ stamp.jsp?arnumber=1335446
+
+[11] http://cs.stanford.edu/people/karpathy/ \\ convnetjs/index.html
+
+[12] Turk, Matthew and Alex Pentland. ``Face Recognition Using Eigenfaces.'' http://www.cs.ucsb.edu/~mturk/Papers/mturk-CVPR91.pdf
+
+[13] Saragih, Jason M., Simon Lucey, and Jeffrey F. Cohn. ``Face Alignment through Subspace Constrained Mean-Shifts'' http://www.ri.cmu.edu/pub\_files/2009/9/ \\ CameraReady-6.pdf
+
+[14] \O ygard, Audun Mathias. ``Face Fitting'' http://auduno.com/post/61888277175/fitting-faces
+
+[15] https://github.com/auduno/clmtrackr
+
+[16] http://www.pitt.edu/~emotion/ck-spread.htm
+
+[17] http://www.kasrl.org/jaffe.html
+
+[18] Ekman, Paul. ``An argument for basic emotions.'' Cognition \& Emotion 6.3-4 (1992): 169-200.
+
+[19] Le Cun et al. ``Handwritten Digit Recognition with a Back-Propagation Network.'' http://yann.lecun.com/exdb/publis/pdf/lecun-90c.pdf
+
+[20] http://yann.lecun.com/exdb/lenet/
+\end{quote}
+
+\end{document}
