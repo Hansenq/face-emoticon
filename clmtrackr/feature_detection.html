@@ -22,8 +22,8 @@
 		<script src="./models/model_pca_20_svm.js"></script>
 		<div id="content">
       <div id="container">
-        <canvas id="image" width="256" height="256"></canvas>
-        <canvas id="canvas" width="256" height="256"></canvas>
+        <canvas id="image" width="640" height="480"></canvas>
+        <canvas id="canvas" width="640" height="480"></canvas>
       </div>
       <p id="debug"></p>
       <p id="convergence"></p>
@@ -53,7 +53,7 @@
           imageCC.drawImage(img,0,0,canvasInput.width,canvasInput.height);
         };
 
-        var source_name = '../data/ck+_test_scaled/ck+_'
+        var source_name = '../data/ck+/ck+_'
 
         function pad(num, size) {
           var s = num+"";
@@ -102,7 +102,7 @@
           }
 
           var blob = new Blob(converged_pos);
-          saveAs(blob,'ck+_test_scaled_' + image_padded_count + '.txt')
+          saveAs(blob,'ck+_' + image_padded_count + '.txt')
         }, false);
 
 			</script>
