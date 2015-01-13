@@ -130,14 +130,17 @@
     			/* draw detected area */
     			for (var i = 0; i < comp.length; i++) {
                     var canvas = document.createElement("canvas");
-                    canvas.width = 144;
-                    canvas.height = 184;
-                    canvas.getContext("2d").drawImage(image, comp[i].x, comp[i].y, comp[i].width, comp[i].height, 0, 0, 144, 184);
+                    canvas.id = "canvas" + i;
+                    canvas.width = 256;
+                    canvas.height = 256;
+                    canvas.getContext("2d").drawImage(image, comp[i].x, comp[i].y, comp[i].width, comp[i].height, 0, 0, 256, 256);
                     var img = document.createElement("img");
+                    img.id = "image" + i;
                     img.src = canvas.toDataURL("image/png");
                     img.className = "thumbnail";
-                    if (results_viewer.firstChild) results_viewer.insertBefore(img, results_viewer.firstChild);
-                    else results_viewer.appendChild(img);
+                    img.width = 144;
+                    img.height = 144;
+                    results_viewer.appendChild(img);
 
                     ctx.beginPath();
                     ctx.rect(comp[i].x * scale, comp[i].y * scale, comp[i].width * scale, comp[i].height * scale);
