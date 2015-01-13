@@ -414,7 +414,7 @@ var ccv = {
                         
                         var cx = x + h / 2;
                         var cy = y + w / 2;
-                        var sz = (w > h ? w : h) * 1.8;
+                        var sz = (w > h ? w : h) * 2;
                         
 						seq2.push({"x" : cx - sz / 2,
 								   "y" : cy - sz / 2,

@@ -216,26 +216,24 @@
         var imageCC = document.getElementById('image' + i).getContext('2d');
         var canvasInput = document.getElementById('canvas' + i);
         var cc = canvasInput.getContext('2d');
-        cc.fillRect(0, 0, 50, 50);
-        
+
         var ctracker = new clm.tracker({stopOnConvergence : true});
         ctracker.init(pModel);
         ctracker.start(document.getElementById('image' + i));
 
-        drawLoop(cc, ctracker);
+        var drawRequest;
+        function drawLoop() {
+        drawRequest = requestAnimationFrame(drawLoop);
+        cc.clearRect(0, 0, canvasInput.width, canvasInput.height);
+        ctracker.draw(canvasInput);
+        }
+        drawLoop();
 
         document.addEventListener("clmtrackrConverged", function(event) {
             document.getElementById('convergence').innerHTML = "CONVERGED";
             cancelRequestAnimFrame(drawRequest);
             return converged_pos = ctracker.getCurrentPosition();
         }, false);
-    }
-
-    function drawLoop(cc, ctracker) {
-        //cc.fillRect(0, 0, 50, 50);
-        requestAnimationFrame(drawLoop);
-        cc.clearRect(0, 0, 256, 256);
-        ctracker.draw(cc);
     }
 
     // Emotion Classification Neural Net
