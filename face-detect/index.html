@@ -54,10 +54,10 @@
 <script src="../convnetjs/build/convnet.js"></script>
 
 <!-- feature detection libraries -->
-<script src="..clmtrackr/js/utils.js"></script>
-<script src="..clmtrackr/js/clmtrackr.js"></script>
-<script src="..clmtrackr/js/Filesaver.min.js"></script>
-<script src="..clmtrackr/models/model_pca_20_svm.js"></script>
+<script src="../clmtrackr/js/utils.js"></script>
+<script src="../clmtrackr/js/clmtrackr.js"></script>
+<script src="../clmtrackr/js/Filesaver.min.js"></script>
+<script src="../clmtrackr/models/model_pca_20_svm.js"></script>
 
 <script type="text/javascript" src="ccv.js"></script>
 <script type="text/javascript" src="face.js"></script>
@@ -137,22 +137,40 @@
     			/* draw detected area */
     			for (var i = 0; i < comp.length; i++) {
                     var canvas = document.createElement("canvas");
-                    canvas.id = "canvas" + i;
                     canvas.width = 256;
                     canvas.height = 256;
                     canvas.getContext("2d").drawImage(image, comp[i].x, comp[i].y, comp[i].width, comp[i].height, 0, 0, 256, 256);
                     var img = document.createElement("img");
-                    img.id = "image" + i;
                     img.src = canvas.toDataURL("image/png");
                     img.className = "thumbnail";
-                    img.width = 144;
-                    img.height = 144;
-                    results_viewer.appendChild(img);
+                    img.width = 256;
+                    img.height = 256;
+                    
+                    var div = document.createElement("div");
+                    div.className = "thumb-container";
+                    
+                    var img_canvas = document.createElement("canvas");
+                    img_canvas.id = "image" + i;
+                    img_canvas.width = img.width;
+                    img_canvas.height = img.height;
+                    img_canvas.getContext("2d").drawImage(img, 0, 0);
+                    
+                    var thumb_canvas = document.createElement("canvas");
+                    thumb_canvas.id = "canvas" + i;
+                    thumb_canvas.className = "thumb-canvas";
+                    thumb_canvas.width = img.width;
+                    thumb_canvas.height = img.height;
+                    
+                    div.appendChild(img_canvas);
+                    div.appendChild(thumb_canvas);
+                    
+                    results_viewer.appendChild(div);
 
                     ctx.beginPath();
                     ctx.rect(comp[i].x * scale, comp[i].y * scale, comp[i].width * scale, comp[i].height * scale);
     				ctx.stroke();
                 }
+                getAllPositions(comp.length);
     		}
     		/* call main detect_objects function */
     		if (async) {
@@ -181,6 +199,43 @@
     		};
     		reader.readAsDataURL(file);
     	}
+    }
+    
+    // Feature Detection
+    
+    function getAllPositions(length) {
+        var all_positions = [];
+
+        for (i = 0; i < length; i++) {
+            all_positions[i] = drawFeatures(i);
+        }
+        return all_positions;
+    }
+
+    function drawFeatures(i) {
+        var imageCC = document.getElementById('image' + i).getContext('2d');
+        var canvasInput = document.getElementById('canvas' + i);
+        var cc = canvasInput.getContext('2d');
+        cc.fillRect(0, 0, 50, 50);
+        
+        var ctracker = new clm.tracker({stopOnConvergence : true});
+        ctracker.init(pModel);
+        ctracker.start(document.getElementById('image' + i));
+
+        drawLoop(cc, ctracker);
+
+        document.addEventListener("clmtrackrConverged", function(event) {
+            document.getElementById('convergence').innerHTML = "CONVERGED";
+            cancelRequestAnimFrame(drawRequest);
+            return converged_pos = ctracker.getCurrentPosition();
+        }, false);
+    }
+
+    function drawLoop(cc, ctracker) {
+        //cc.fillRect(0, 0, 50, 50);
+        requestAnimationFrame(drawLoop);
+        cc.clearRect(0, 0, 256, 256);
+        ctracker.draw(cc);
     }
 
     // Emotion Classification Neural Net

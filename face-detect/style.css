@@ -211,6 +211,20 @@ a:hover {
     display: inline-block;
 }
 
+.thumb-container {
+    position: relative;
+}
+
+.thumb-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    
+    border:1px solid black;
+    margin-right: 4px;
+    display: inline-block;
+}
+
 #footer {
     width: 100%;
     text-align: center;
