@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<link rel="stylesheet" type="text/css" href="style2.css">
+<link rel="stylesheet" type="text/css" href="style.css">
 <title>Face Detector</title>
 </head>
 <body>
@@ -10,7 +10,7 @@
 	<div id="header"><div class="title">Javascript Face Detector</div><div class="subtitle">This tool identifies human faces in a photograph</div></div>
     <div id="content">
         <div id="input">
-            <div id="urlbox"><div id="urlbox-row"><div id="url-text"><input type="text" id="url-image" placeholder="Paste image URL here"/></div><div id="url-btn"><input id="url-submit" type="button" value="Submit"/></div></div></div>
+            <div id="urlbox"><div id="urlbox-row"><div id="url-text"><input type="text" id="url-image" placeholder="Paste image URL here (disabled)" disabled/></div><div id="url-btn"><input id="url-submit" type="button" value="Submit" disabled/></div></div></div>
             <div id="image-viewer"><div id="image-help">Drag and drop image<br/>OR<br/>Click to upload</div><input type="file" id="file-selector" accept="image/*"/><canvas id="image-out"/></div>
         </div>
         <div id="output">
@@ -93,25 +93,17 @@ function detectNewImage(src, async) {
 			ctx.strokeStyle = 'rgba(255,165,0,0.8)';
 			/* draw detected area */
 			for (var i = 0; i < comp.length; i++) {
-                var w = comp[i].width;
-                var h = comp[i].height;
-                if (w * 23 / 18 > h) {
-                    h = w * 23 / 18;
-                } else if (w * 23 / 18 < h) {
-                    w = h * 18 / 23;
-                }
                 var canvas = document.createElement("canvas");
                 canvas.width = 144;
                 canvas.height = 184;
-                canvas.getContext("2d").drawImage(image, comp[i].x, comp[i].y, w, h, 0, 0, 144, 184);
+                canvas.getContext("2d").drawImage(image, comp[i].x, comp[i].y, comp[i].width, comp[i].height, 0, 0, 144, 184);
                 var img = document.createElement("img");
                 img.src = canvas.toDataURL("image/png");
                 img.className = "thumbnail";
-                if (results_viewer.firstChild) results_viewer.insertBefore(img, results_viewer.firstChild);
-                else results_viewer.appendChild(img);
+                results_viewer.appendChild(img);
 
                 ctx.beginPath();
-                ctx.rect(comp[i].x * scale, comp[i].y * scale, w * scale, h * scale);
+                ctx.rect(comp[i].x * scale, comp[i].y * scale, comp[i].width * scale, comp[i].height * scale);
 				ctx.stroke();
             }
 		}

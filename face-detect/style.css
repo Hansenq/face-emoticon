@@ -103,7 +103,7 @@ a:hover {
     width: 100%;
 }
 
-#content #input #urlbox #urlbox-row #url-text input[type="text"] {
+#content #input #urlbox #urlbox-row #url-text input[type="text"]{
     float: left;
     width: 100%;
     border-radius: 4px;
@@ -112,6 +112,11 @@ a:hover {
     padding: 4px;
     border: 1px dotted black;
     text-decoration: none;
+}
+
+#content #input #urlbox #urlbox-row #url-text input[type="text"]:disabled{
+    background:#eee;
+    cursor: not-allowed;
 }
 
 #content #input #urlbox #urlbox-row #url-btn input[type="button"] {
@@ -128,6 +133,11 @@ a:hover {
     background: #f0f0f0;
     text-decoration: none;
     cursor: pointer;
+}
+
+#content #input #urlbox #urlbox-row #url-btn input[type="button"]:disabled {
+    background: #eee;
+    cursor: not-allowed;
 }
 
 #content #input #image-viewer {
