@@ -25,7 +25,7 @@
 \begin{document}
 
 %%%%%%%%% TITLE
-\title{COS 429 Project: Browser Implementation of Face to Emoji using Convolutional Neural Networks for Emotion Classification}
+\title{COS 429 Project: Browser Implementation of Emotion Classification using Convolutional Neural Networks}
 
 \author{Karen Ouyang\\
 Princeton University\\
@@ -45,142 +45,208 @@ Princeton University\\
 
 %%%%%%%%% ABSTRACT
 \begin{abstract}
-   Recently, emojis (small, rendered imitations of facial expressions generally used for instant messaging), have become a popular form of communication between users. These characters imitate humans' faces and add emotion to text; however, choosing the correct icon can be difficult.  We attempt to create a system by which images of people's faces can be automatically mapped to a specific emoji icon. There are a few main steps in our process: face detection, face fitting, and emotion classification. Face detection is detected using eigenfaces; face fitting is conducted by fitting a mask onto potential faces in an image, and emotion detection is conducted using a Convolutional Neural Network. We hope to implement this system in a publicly-available web application running on the client's computer.
+We attempt to create a system by which images of people's faces can be automatically mapped to a specific emotion. There are a few main steps in our process: face detection, facial feature detection, and emotion classification. Face detection is detected using Viola-Jones; face fitting is conducted by deformable model fitting, and emotion detection is conducted using a Convolutional Neural Network. We implemented this system in a publicly-available web application running on the client's computer.
 \end{abstract}
 
 %%%%%%%%% BODY TEXT
-\section{Introduction}
+\section{Problem Statement}
 
-Facial expression plays a great role in human communication for evaluating social cues. We wish to develop a realtime mood detection system based on input video of a subject's face, and evaluate with some percent certainty the emotions in his or her face. As communication becomes increasingly digital, such a tool would enable us to, for example, send automated emojis. It can also be used in robot-human interactions or for evaluating audience reaction to entertainment. Numerous other applications exist as well.
+It is relatively easy for humans to identify emotions in faces, but this it is much more difficult for machines to recognize what that emotion is. We would like to solve this problem with a few techniques from Computer Vision.
+
+Our project maps human faces in an input images to an emotion. That is, the user uploads an input image; the output is a list of the faces in the image and their corresponding emotions.
 
 %-------------------------------------------------------------------------
-\section{Existing Research}
+\section{Motivation}
 
-Previous research has been conducted on the major portions of the task, mainly face detection, facial feature detection, emotion classification using neural networks, and neural networks that run on the browser. However, we attempt to tie all of these together in a usable and functional interface running on a client machine. 
+As facial expressions play a great role in human interaction, we would like to see if this can be done by the computer. Specifically, we would like to create a client facing web app that detects faces in an image, detects the features in the faces, and then classifies the faces into an emotion, allowing the user to immediately see the results of their image.
 
+While much of the research and technical background of this project has been done by other individuals, combining all of these into one working prototype is a difficult challenge. We have not had experience delving into the implementation details of any of algorithms we are attempting to use. Additionally, neural networks, while quite powerful, are notoriously hard to configure. We had to research each of these technologies and understand how they work before attempting to begin implementation.
+
+\section{Related Work}
+
+Emotion detection has been tackled many times before us, as this field is not new. 
+
+Related work has been done on all three areas that we focused on; however, none has tried combining all three approaches into one system that works well. Widanagamaachchi explored the use of a neural network for emotion classification by first deconstructing each face into features \cite{Widanagamaachchi09}. His features were hand-picked, and Widanagamaachchi reported a success rate of approximately 50\%. 
 
 \subsection{Face Detection}
-Currently, there are several methods to face detection which can be broadly described as the following: knowledge-based, template-matching, feature invariant, and appearance-based. [1]
 
-Knowledge-based methods are based on known facial geometry. For example, an algorithm for eye detection will perform eye edge contour tracing based on prior knowledge [2]. Other facial features, such as face shape [3], are usable as well. Challenges in this approach mostly involve translating the facial geometry rules into effective rules. Furthermore, knowledge-based methods are not as scalable as other approaches because they require building a prior knowledge set.
+There exists a variety of face detection algorithms, most of which may be categorized as knowledge-based, template-matching, feature invariant, and appearance-based. While, on the whole, face detection algorithms have been mostly successful at detecting human faces, each approach has its own pros and cons.
 
-Template-matching methods involve matching a standard face pattern in the input image. This may be accomplished by using histogram of oriented gradients (HOG) as described in class [4]. Though this sliding-window approach is fairly simple and provides high accuracy, it has the drawback of requiring image scaling.
+Knowledge-based methods are based on known facial geometry. For example, an algorithm for eye detection will perform eye edge contour tracing based on prior knowledge \cite{Zhang}. Other facial features, such as face shape \cite{Wang}, are usable as well. Challenges in this approach mostly involve translating the facial geometry rules into effective rules. Furthermore, knowledge-based methods are not as scalable as other approaches because they require building a prior knowledge set.
 
-Feature invariant methods perform facial feature detection, such as of skin color/texture, eyes, nose, or mouth. This is accomplished through statistical models learned from a training database [5]. Feature invariant approaches, however, are not suitable for inputs with noise, as they may disrupt or weaken the conditions. Like with HOG, the main drawback of this approach is with scaling. It is also weak to rotation, should these images not be in the training dataset.
+Template-matching methods involve matching a standard face pattern in the input image. This may be accomplished by using histogram of oriented gradients (HOG) as described in class \cite{Xiao}. Though this sliding-window approach is fairly simple and provides high accuracy, it has the drawback of requiring image scaling.
 
-Appearance-based methods are more varied. Existing approaches include, but are not limited to: direct correlation, accomplished comparing of pixel intensities values from facial images [6]; eigenfaces, by taking covariance matrices of facial images and producing a face-key image vector; support vector machines [7]; and neural-network training.
+Feature invariant methods perform facial feature detection, such as of skin color/texture, eyes, nose, or mouth. This is accomplished through statistical models learned from a training database \cite{Hotta}. Feature invariant approaches, however, are not suitable for inputs with noise, as they may disrupt or weaken the conditions. Like with HOG, the main drawback of this approach is with scaling. It is also weak to rotation, should these images not be in the training dataset.
 
+Appearance-based methods are more varied. Existing approaches include, but are not limited to: direct correlation, accomplished comparing of pixel intensities values from facial images \cite{Heseltine}; eigenfaces, by taking covariance matrices of facial images and producing a face-key image vector; support vector machines \cite{Heisele}; and neural-network training.
+
+\subsection{Feature Detection}
+
+Although feature detection has been studied extensively, there exists less research on real-time methods that estimate feature points, especially for possibly low-resolution videos or images.
+One approach that has shown promise is deformable model fitting, which fits an parameterized model to an image such that its feature points correspond to points of interest on the original image \cite{Saragih}. 
+
+Another promising avenue is using conditional regression forests, which learns the relations between facial images patches and the location of feature points conditional to global face properties, such as head poses \cite{Dantone}.
 
 \subsection{Emotion Classification}
 
-The extracted facial features are used as input to a classification system that selects a predefined emotion category. The problem of emotion classification has been solved many times in the past, most of which differ in the features that are selected and the classification method used. Many different techniques have been used: Dumas (2001) showed that the use of Support Vector Machines (SVM) achieves equivalent performance to neural networks, with a mean accuracy of 88.9\% [8]. Sebe, Sun, Bakker et al. (2004) compared the performance of Bayesian Networks, Decision Trees, SVMs, and k-Nearest Neighbor algorithms for this task [9]. However, they concluded that ``facial expression recognition is not a simple classification problem and all of the models tried were not able to entirely capture the complex decision boundary that separates the different expressions.'' Their experiments showed that k-Nearest Neighbor performed the best, but was computationally slow and required large amounts of memory. 
+Emotion Classification has been attempted multiple times by many people interested in Computer Vision. Dumas (2001) showed that the use of Support Vector Machines (SVM) achieves equivalent performance to neural networks, with a mean accuracy of 88.9\%. Sebe, Sun, Bakker et al. (2004) compared the performance of Bayesian Networks, Decision Trees, SVMs, and k-Nearest Neighbor algorithms for this task. However, they concluded that ``facial expression recognition is not a simple classification problem and all of the models tried were not able to entirely capture the complex decision boundary that separates the different expressions.'' Their experiments showed that k-Nearest Neighbor performed the best, but was computationally slow and required large amounts of memory. 
 
-In contrast, Garcia and Delakis (2004) used Convolutional Neural Networks to considerable success [\ref{ref:Garcia,Delakis}]. Convolutional Neural Networks (CNN) are a special type of multi-layer neural networks that use a sequence of alternating convolutional layers and sub-sampling layers. Garcia and Delakis write, ``Experiments have shown high detection rates with a particularly low number of false alarms, on difficult test sets, without requiring the use of multiple networks for handling difficult cases.'' The authors recommend no local preprocessing on each image. Based off of this research, and Yann LeCun's presentation on ``The Unreasonable Effectiveness of Deep Learning,'' [10] we attempt to use a CNN for our task.  
+In contrast, Garcia and Delakis (2004) used Convolutional Neural Networks to considerable success. Convolutional Neural Networks (CNN) are a special type of multi-layer neural networks that use a sequence of alternating convolutional layers and sub-sampling layers. Garcia and Delakis write, ``Experiments have shown high detection rates with a particularly low number of false alarms, on difficult test sets, without requiring the use of multiple networks for handling difficult cases.'' The authors recommend no local preprocessing on each image. Based off of this research, and Yann LeCun's presentation on ``The Unreasonable Effectiveness of Deep Learning,'' we also attempt to test a CNN in our experiment. 
+Previous work has been done on a browser implementation of a CNN. Andrej Karpathy, a student at Stanford University, has built ConvNetJS, a Javascript tool that allows training of a CNN in a client's computer. His tool can also train traditional full-connected neural networks, and we use his library for our purposes, as it allows our system to completely exist in a client-side web app.
 
-Previous work has been done on a browser implementation of a CNN. Andrej Karpathy has built ConvNetJS, a Javascript tool that allows training of a CNN in a client's computer [11]. His work fits well into our needs, and we use his library as an implementation of a CNN.
 
-\section{Methodology}
+\section{Our Algorithm}
 
 We have broken up our approach into three primary parts: face detection, face fitting, and emotion detection. We will describe each of these parts in further detail.
 
 \subsection{Face Detection}
 
-The method of eigenfaces to detect faces holds multiple advantages over other facial detection algorithms, primarily in its speed and efficiency. This is good for real-time data as from an input video.
+Human faces are known to follow certain features called Haar features. For example, the nose bridge is brighter than the eyes, and the eyes region is brighter than the upper cheeks.
 
-We will implement the eigenface method for our project, based on a paper by Turk and Pentland [12]. We begin by computing the eigenfaces, which is a set of eigenvectors later used to detect faces in the input. We begin by obtaining a set of training facial images. After representing each image as a vector, we can compute the average face vector. From here, we compute a covariance matrix. Using this covariance matrix, the average face vector, and the face vectors, we compute a set of eigenvectors, from which we keep the ``best'' ones in the eigenface. Face images are projected onto a face space that encodes the variation among the images.
+For face detection, we used the Viola-Jones object detection framework. While there are many existing face detection schemes, such as eigenfaces, Viola-Jones is especially useful for our application in that it is very fast: since we are dealing with user input, we wish to respond as quickly as possible.
 
-To recognize whether the subject in an input image that is in the same orientation as the training faces, we normalize this input image with the average face vector. This is then projected onto the eigenspace and we compute the distance with this face space. This distance can be the Euclidian distance, though other distance calculations may be used as well.
+The Viola-Jones framework is a strong classifier built from multiple weak detectors. For the purpose of face detection, each weak detector corresponds to a Haar feature. During detection, multiple subregions of the input image are passed through the weak detectors. If a subregion passes all the detectors, then it is determined to be a face.
 
-We use the face space to detect faces in a given input image. First, we project the image onto the face space. Then, at every location in the image, calculate the distance between the local subimage--the image around this location--and the face space. This distance is used as the score to determine whether there is a face in this subimage. Once this face is detected, we can move on to evaluating the facial features.
+Because the Viola-Jones algorithm matches faces with limited set of Haar features, it primarily detects upright and forward-facing faces. While this may be a limitation in other cases, for our use case, it is actual desirable because we will use these faces as inputs in feature detection and emotion classification, both of which perform better on ``optimal'' inputs such as these.
 
-\subsection{Face Fitting}
+\subsection{One-Step Emotion Classification}
 
-The main features of the face, such as eyebrows, eyes, nose, mouth, and jawline, can be represented by a facial model consisting of numerous small classifiers. Because the face is relatively stable, persistent, and consistent from person to person, the input face can be fitted to a model that is approximatively representative of the whole population. Given the initial positions from the approximate model, the classifiers will locally search the surrounding points to find the optimal fit. 
+We had heard that convolutional neural networks were able to produce an accurate classification straight from input images. Yann LeCun, the foremost researcher on neural networks, has also claimed that convolutional neural networks have greatly improved and beaten the results outputted by machines.
+
+We decided first to attempt to implement a convolutional neural network, providing the images straight as input. For the purposes of this paper, ``One-Step Emotional Classification'' will refer to the use of a neural network with image inputs to classify emotions. We hypothesized that giving a neural network the entire image instead of certain selected points allowed the network to take into account nuances in the image that might not have been summarized by the feature vectors. 
+
+Additionally, we believed that the neural network might be able to provide more accurate classifications, simply because it was provided with additional information with which to draw conclusions. If this attempt worked, it would simplify our model and allow us to create a two-part system instead of a three-part one.
+
+Our attempted neural network was modeled off of Karpathy's MINST digit classifier, with two convolutional layers, two pooling layers, a learning rate of 0.01, and a weight decay of 0.001. The input layer consisted of 65536 neurons, one for each of the pixels in the 256x256 size image. The output softmax classification layer simply consisted of 6 neurons, one for each emotion we tried to classify. We ran this image on the JAFFE dataset split into a training group (146 images) and a testing group (68 images). 
+
+In order to load the images into the page in a speedy way, we had to preprocess the images. A python script (\verb|/process_jaffe.py|, \verb|/process_ck+.py|) was used to transform the 256x256 images first to a 1x65536 pixel image, that was then stacked upon 142 other similarly processed images to create a 142x65536 image. This image was then dynamically loaded into a canvas in one batch, then used for training. This network was implemented in \verb|/emotion_conv.html|.
+
+\subsection{Feature Detection}
+
+We used the JavaScript library clmtrackr \cite{clmtrackr}, for our feature point detection purposes. From example code from the author Audun Mathias \O ygard, it is known that library can be used to perform feature detection at speeds necessary for real-time analysis. In addition, because clmtrackr is a JavaScript library, it proved to be an easy integration with the rest of JavaScript, HTML, and CSS code.
+
+Clmtrackr implements deformable model fitting through constrained local models fitted by regularized landmark mean-shift. The main features of the face, such as eyebrows, eyes, nose, mouth, and jawline, can be represented by a facial model consisting of numerous small classifiers. Because the face is relatively stable, persistent, and consistent from person to person, the input face can be fitted to a model that is approximatively representative of the whole population. Given the initial positions from the approximate model, the classifiers will locally search the surrounding points to find the optimal fit.
 
 Creating the approximate model requires averaging the facial features of many pictures. Using the MUCT database (a database of 3755 faces with 76 annotated facial features), the average of the locations of all the annotated features can be found. Through principle component analysis, variations in defined parameters such as yaw, pitch, mouth openness, smile intensity, etc can be extracted. Thus any possible pose can be modelled by a linear combination of vectors of the mean points and the weighted combination of parameters.
 
-Each point on the model is a classifier, and in our case a logistic regression classifier with an SVM kernel. The classifier is trained by inputting multiple cropped images from the MUCT database of the target point (e.g. pupil) and its surrounding areas. After face detection is complete, and the approximate model overlaid over the face, each classifier aligns to the optimal feature point within a set bounding box [13].
+Each point on the model is a classifier, and in our case a logistic regression classifier with an SVM kernel. The classifier is trained by inputting multiple cropped images from the MUCT database of the target point (e.g. pupil) and its surrounding areas. After face detection is complete, and the approximate model overlaid over the face, each classifier aligns to the optimal feature point within a set bounding box.
 
-\begin{figure}[t]
-\begin{center}
-   \includegraphics[width=0.8\linewidth]{facial_model.PNG}
-\end{center}
-   \caption{The base facial model with 70 classifiers. [14]}
-\label{fig:long}
-\label{fig:onecol}
+Each classifier is moved to the region of maximum likelihood, which is calculated through mean-shift. The movement is regularized by constraining the ``new points'' to the coordinate space spanned by the facial model. We do this iteratively and the model gradually converges on the optimal fit. 
+
+\subsection{Emotion Classification}
+
+Our plan consisted of taking our 71-point feature vectors and using them as input to a classification neural network. Neural networks have historically been used as very accurate classifiers, and are an alternative to using Exemplar-Support Vector Machines, Decision Trees, or any one of the algorithms listed above. 
+
+Based on the recommendation of Karpathy \cite{Karpathy}, we designed our neural network with two layers of fully-connected neurons, 142 neurons as input (71 2D points), and 6 neurons in a svm classification layer for output. We trained the network with a portion (3/4) of the Cohn-Kanade+ and JAFFE datasets, and used the remaining portion as a test set. We ran the training again, this time solely training on the JAFFE dataset. We varied the size and number of the hidden layers before concentrating on a few that produced the best result: 1 hidden layer with 700 neurons, 2 hidden layers with 200 neurons each, and a convolutional neural network with 2 convolution and 2 pooling layers.
+
+Each of the feature vectors produced from the ``Feature Detection'' stage came in a separate text file for each image. We wrote a script that opened each of these files and converted these into a JavaScript array, which was then inputted into our training procedure. Each of the networks were trained with a learning rate of 0.1, and a weight decay of 0.001.
+
+\section{Results, Evaluation, and Analysis}
+
+\subsection{Facial Detection}
+
+A screenshot of our face detector may be found in Figure~\ref{fig:face_sshot}. On the left, the user may upload a picture on which to perform face detection; the faces are boxed in the input image and shown as a list on the right side.
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{face_sshot01.png}
+\caption{Web application with face detection only\label{fig:face_sshot}}
 \end{figure}
 
-\begin{figure}[t]
-\begin{center}
-   \includegraphics[width=0.8\linewidth]{fitted_model.PNG}
-\end{center}
-   \caption{Fitted facial model. [14]}
-\label{fig:long}
-\label{fig:onecol}
+For the face detection step, the algorithm is generally very good at picking up front-facing, upright faces with a variety of facial expressions. Faces that are partially obstructed with other objects or with shadows are more difficult to detect, because they obscure facial features that the algorithm is searching for. It also tends to pick up a number of false positives in images with noisy backgrounds, finding matches in non-faces with certain features used to describe a face, such as an eye-nose-eyes vertical layout.
+
+There are a number of further steps that we may take with this application. For the user, it would be helpful to be able to load images from URLs, which is currently not possible due to restrictions in JavaScript and hosting. It would also be helpful for users to have an option to manually remove false positives or select faces that the face detection algorithm missed. In this way, we could also further train our algorithm.
+
+\subsection{One-Step Emotional Classification}
+
+We ran the convolutional neural network with the settings above. The first thing we noticed was that the page running the network (in Javascript) became horrendously slow. We narrowed this down to the fact that all of the images used in testing the network were being displayed and rendered in the browser, resulting in unnecessary bloat. After removing these images, we found that while the network was slowly making progress through all of our images (forward and backward propagation times in the range of 200-300ms), the network was showing no noticeable improvement, neither on the training dataset nor on the test dataset. Additional details are visible in the status results in the image below.
+
+Unfortunately, our attempt at using one single neural network to recognize emotions directly from an image essentially failed. The neural network balked at the task, and after many hours of training, was not in a usable state--the accuracy was barely better than random. We believe this was caused by two factors: a) the high variance between input images (the participants did not exaggerate their emotions very much), b) the limited number of input photos we could obtain, only 211. We believe that these two factors built off each other to result in too much variance between the limited number of images, so the neural network could not adequately identify the significant points and features in each image.
+
+\begin{figure}
+\centering
+\includegraphics[width=0.7\linewidth]{neural_results.png}
+\caption{Neural network training results}
 \end{figure}
 
-Face fitting will be implemented using clmtrackr [15], which is a javascript library for fitting facial models to faces in videos or images.
+Talking to others more experienced in the field, we realized that machine learning on actual images typically requires large amounts of training data. While a convolutional neural network has been shown to work on input images, and thus be theoretically feasible for this task, we would require large amounts more of training data. Karpathy's MNIST and CIFAR-10 demonstrations with the convolutional neural networks were successful because he was able to draw upon a dataset that numbered in the tens of thousands \cite{Karpathy2}; once we obtain that many photos, we can try again.
 
-\subsection{Emotion Detection}
+\subsection{Feature Detection}
 
-To build a dataset for the emotion classification, face fitting will be conducted on images from the Cohn-Kanade AU-Coded Expression Database [16] and the JAFFE database [17], both of which incorporates emotion metadata on 486 facial images. The six basic emotions of interest are anger, disgust, fear, happiness, and surprise, based off of Paul Eckman's work on facial expressions [18]. 
+While manually running the system on each of the images in our dataset, we noticed that for some images, the models did not fit as well as they could have. The following images are from the JAFFE dataset. As can be seen from the first image, with a neutral expression, our 70 classifiers fit perfectly. However, with the second image, a surprised expression results in some complications. While the eyebrows, pupil, eye, nose, chin, and jaw structures are fit perfectly, the vectors of the mouth did not open as wide as that of the input image. This shortfall is carried over to more extreme facial poses, such as extreme anger or wide smiles. It seems that exaggerated features are not fit as well as neutral expressions. For example, see the images in figures~\ref{fig:feature1} and ~\ref{fig:feature2}.
 
-The subsequent extract features and corresponding emotional metadata will be inputs to train a neural network that will be used to detect emotions in new input faces. The neural network will classify new input image into one of the six basic emotions. 
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{feature1.png}
+\caption{Feature detection example\label{fig:feature1}}
+\end{figure}
 
-For our purposes, we will use a Convolutional Neural Network, specifically the version originally introduced by Yann LeCun using the backpropagation learning algorithm [19]. We use Andrej Karpathy's implementation of a CNN in the browser, ConvNetJS. Our procedure for this experiment is to first create a working basic classifier for the six basic emotions as described above, then expand our system to cover more unique facial expressions. 
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{feature2.png}
+\caption{Another feature detection example\label{fig:feature2}}
+\end{figure}
 
-Our CNN will be trained using the backpropagation algorithm [20]; thus, weights for each layer do not need to be adjusted globally. Rather, we can minimize a global error function and propagate the weights back to each layer. We simply use the data sets above for training, and let the CNN adjust the weight of each layer as necessary. The neural network will then output a percentage score for each emotion.
+After the face were detected in the web application, we ran the clmtrackr deformable model fitting onto our isolated cropped images. In general, the algorithm reached convergence within 2 or 3 seconds. We then drew the resulting vectors overlain on the original image. An example of our results can be seen in the screenshot in Figure~\ref{fig:feature_sshot}.
 
-On our web application, we will each specific emoji to a set of percentage scores for each emotion. The resulting output from our CNN will then be used to determine which emoji most closely matches the input image. That emoji will then be displayed to the user.
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{face_sshot03.jpg}
+\caption{Web application with face and feature detection\label{fig:feature_sshot}}
+\end{figure}
 
-\section{Evaluation Metrics}
+\subsection{Emotional Classification}
 
-A minimal viable product will be an web application where the user inputs an image of their face. The face detection, model fitting, and emotion detection code will be run and the user will be returned an emoji that corresponds with their primary basic emotion shown. We aim for a accuracy of 70\% as previous research has shown that a neural network can be trained to recognize the emotion of a Cohn-Kanade image at a accuracy of 77\%.
+For emotional classification, we tried three different neural networks, trained on the Cohn-Kanade+ and JAFFE datasets, as mentioned above in the Methodology. The results of each of these networks are displayed in the table below. 
 
-Assuming the minimal viable product is a success, work will be done to allow real-time emotion detection with a video input. Additionally, more emojis will be added to allow outputs representing a mix of the basic emotions. Work will also be done to port the web application onto the Android development platform.
+\vspace{\baselineskip}
 
-\section{References}
+\noindent
+\begin{tabular*}{\linewidth}{ccc}
+\hline \rule[-2ex]{0pt}{5.5ex} {\bf Neurons / Layer} & {\bf Max. Accuracy} & {\bf Avg. Accuracy} \\ 
+\hline \rule[-2ex]{0pt}{5.5ex} 700 & 0.29 & 0.24 \\ 
+\rule[-2ex]{0pt}{5.5ex} 200, 200 & 0.28 & 0.26 \\ 
+\rule[-2ex]{0pt}{5.5ex} Convolutional & 0.35 & 0.29 \\ 
+\hline 
+\end{tabular*}
 
-\begin{quote}
-[1] Widanagamaachchi, Wathsala Nayomi. ``Facial Emotion Recognition with a Neural Network Approach.'' http://www.cs.utah.edu/~widanaga/papers/ \\ Widanagamaachchi.2009.thesis.pdf
+\vspace{\baselineskip}
 
-[2] Zhang, Liming. ``Knowledge-based eye detection for human face recognition.'' http://ieeexplore.ieee.org/xpls/ \\ abs\_all.jsp?arnumber=885772\&tag=1
+In our second training run, solely with the JAFFE dataset, the results we obtained were similar, but not as good as the results obtained from both datasets.
 
-[3] Wang, Jianguo and Tieniu Tan. ``A new face detection method based on shape information.'' http://visgraph.cs.ust.hk/biometrics/Papers/Face/ \\ prl2000-06-01.pdf
+\vspace{\baselineskip}
 
-[4] Xiao, Jianxiong. ``What is a chair?'' http://vision.princeton.edu/courses/COS429/ \\ 2014fa/slides/12\_object/ \\ COS429\_ObjectRecognition.pdf
+\noindent
+\begin{tabular*}{\linewidth}{ccc}
+\hline \rule[-2ex]{0pt}{5.5ex} {\bf Neurons / Layer} & {\bf Max. Accuracy} & {\bf Avg. Accuracy} \\ 
+\hline \rule[-2ex]{0pt}{5.5ex} 700 & 0.25 & 0.21 \\ 
+\rule[-2ex]{0pt}{5.5ex} 200, 200 & 0.32 & 0.25 \\ 
+\rule[-2ex]{0pt}{5.5ex} Convolutional & 0.32 & 0.26 \\ 
+\hline 
+\end{tabular*}
 
-[5] Hotta, Kazuhiro, Takio Kurita, and Taketoshi Mishima. ``Scale Invariant Face Detection Method using Higher-Order Local Autocorrelation Features extracted from Log-Polar Image.'' http://ieeexplore.ieee.org/stamp/ \\ stamp.jsp?arnumber=670927
+\vspace{\baselineskip}
 
-[6] Heseltine, Thomas, Nick Pears, Jim Austin, and Zezhi Chen. ``Face Recognition: A Comparison of Appearance-Based Approaches.'' http://www.cs.york.ac.uk/arch/publications/ \\ byyear/2003/face-recognition-a-comparison-of-appearance-based-approaches.pdf
+We hypothesize this may be because combining two datasets allowed for a larger set of data. The difference between the image quality/image scenes were not as large of a factor because we tried to fit the same model onto both types of images, and the neural network was only run on the feature points, not the entire image. Thus the inputs to the neural network from both datasets should have been similar data.
 
-[7] Heisele, Bernd, Purdy Ho, and Tomaso Poggio. ``Face Recognition with Support Vector Machines: Global versus Component-based Approach.'' http://cbcl.mit.edu/publications/ps/iccv2001.pdf
+As seen in the results above, our neural networks unfortunately did not work as well as we had thought it would. However, the convolutional neural network was better than randomly guessing. Additionally, the large improvement made by the convolutional neural network relative to the fully connected networks show that convolutional ones do obtain better performance, as reported in the literature. To follow through with our attempt at creating a emotion-recognition web app, we took the highest performing model of the convolutional neural network and placed it into our web app. While the results it reported were not that accurate, it proved that this complex end-to-end system, including a neural network, could exist on a client's browser as a web app.
 
-[8] Dumas, Melanie. ``Emotional Expression Recognition using Support Vector Machines.'' http://cseweb.ucsd.edu/~elkan/254spring01/ \\ mdumasrep.pdf
+The difficulties we had in tweaking and setting up our neural network possibly reflects a more systemic issue and not simply a configuration problem with the neural network. While we fit our model to the image to obtain our feature vectors, the fits were not as accurate as they could have been, introducing false positives and negatives into our training data set. Additionally, we still only had a few hundred images (and thus a few hundred feature vectors) available to train a neural network. This number is still quite low (especially considering the size of MNIST and CIFAR-10 datasets), and demonstrates to us the value of obtaining a large, robust, and accurate dataset before training any system to classify or recognize images.
 
-[9] Sebe, Nicu et al. ``Towards Authentic Emotion Recognition.'' http://ieeexplore.ieee.org/stamp/ \\ stamp.jsp?arnumber=1398369
+However, once we incorporated our neural network into our final web page, there is a bug where our neural network consistently produces the exact same output, even though we provide the network with different input. No matter how much we debug, the error persists. We believe this may be due to a bug in the way the neural network is implemented, especially for networks with models that are loaded from files. However, the entire system has been created, and should work.
 
-[10] Garcia, Christophe and Manolis Delakis. ``Convolutional Face Finder: A Neural Architecture for Fast and Robust Face Detection.'' http://ieeexplore.ieee.org/stamp/ \\ stamp.jsp?arnumber=1335446
+\section{Conclusion}
 
-[11] http://cs.stanford.edu/people/karpathy/ \\ convnetjs/index.html
+Our application can be found on \url{http://hansenq.github.io/face-emoticon/}. The website is live and functional. However, in the light of a bug that results in the same emotion output permanently, we have disabled the emotion classification portion. Theoretically, if this bug was resolved, we will have achieved our complete goal of facial detection, feature detection, and emotion classification of individual faces on an image successfully. As it stands, face detection through the Viola-Jones algorithm and feature detection through constrained local models fitted by regularized landmark mean-shift to satisfaction, with minimal false positive faces and poor fits. Our neural network achieved an accuracy of approximately 30\%, which is below the reported 77\% accuracy reported by Yafei Sun \cite{Sun}. Problems may have arisen due to poor feature detection fits, insufficiently large emotion-feature point vector dataset, or improperly configured neural network. 
 
-[12] Turk, Matthew and Alex Pentland. ``Face Recognition Using Eigenfaces.'' http://www.cs.ucsb.edu/~mturk/Papers/mturk-CVPR91.pdf
+\section{Contribution Division}
 
-[13] Saragih, Jason M., Simon Lucey, and Jeffrey F. Cohn. ``Face Alignment through Subspace Constrained Mean-Shifts'' http://www.ri.cmu.edu/pub\_files/2009/9/ \\ CameraReady-6.pdf
+Karen worked on face detection, adjusting the algorithm to fit the purposes of feature detection and later steps; designed and created the project web page, adjusting the UI for the best experience; and helped integrate feature detection into the web layout.
 
-[14] \O ygard, Audun Mathias. ``Face Fitting'' http://auduno.com/post/61888277175/fitting-faces
+Yicheng worked on implementing and integrating feature detection on the web application. He used clmtrackr.js to run the deformable model fitting and draw the resulting features in real-time. He also wrote the script that ran face and feature detection on the Cohn-Kanade+ and JAFFE databases to create the needed feature point vector dataset that was to be fed into the neural network. 
 
-[15] https://github.com/auduno/clmtrackr
+Hansen found and downloaded the datasets (Cohn-Kanade+, JAFFE), reorganized and converted the photos; tried setting up, troubleshooting, and configuring the one-step neural network; produced feature vectors for the JAFFE database; and set up, troubleshooted, and configured the emotional classification neural network.
 
-[16] http://www.pitt.edu/~emotion/ck-spread.htm
-
-[17] http://www.kasrl.org/jaffe.html
-
-[18] Ekman, Paul. ``An argument for basic emotions.'' Cognition \& Emotion 6.3-4 (1992): 169-200.
-
-[19] Le Cun et al. ``Handwritten Digit Recognition with a Back-Propagation Network.'' http://yann.lecun.com/exdb/publis/pdf/lecun-90c.pdf
-
-[20] http://yann.lecun.com/exdb/lenet/
-\end{quote}
-
+\bibliographystyle{plain}
+\bibliography{ref}
 \end{document}
